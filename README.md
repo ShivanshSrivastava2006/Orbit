@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-
-
-
 # 🌌 Orbit
 
 Orbit is a social connection-based mobile app designed to help users spontaneously hang out with their 1st and 2nd-degree connections. Built with React Native and Firebase, Orbit lets users create micro-gatherings by sending subtle hangout prompts — only visible to friends-of-friends if a mutual approves. It visualizes social proximity and helps reduce social hesitation by making reach-outs frictionless.
