@@ -1,2 +1,2 @@
 # GDSC-Project-24114-
-A website to track and provide data on social media consumption using LLM for summarization.
+Mobile App to Hangout with your 1st and 2nd-Degree Connections.
