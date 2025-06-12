@@ -1,29 +1,25 @@
+import { useNavigation } from '@react-navigation/native';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { useRouter } from 'expo-router';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth } from '../firebase'; // adjust if needed
 
-export default function SignupScreen() {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState(null);
-  const router = useRouter();
+  const navigation = useNavigation();
 
-  const handleSignup = async () => {
+  const handleLogin = async () => {
     setMessage(null);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      setMessage(`✅ Logged in as ${userCredential.user.email}`);
 
-      await setDoc(doc(db, 'users', user.uid), {
-        email: user.email,
-        createdAt: new Date(),
-      });
-
-      setMessage(`✅ Signup successful for ${user.email}`);
-      setTimeout(() => router.replace('/(tabs)/home'), 2000); // <- better than push
+      // Navigate to OTP screen with mock phone number
+      setTimeout(() => {
+        navigation.navigate('Otp', { phone: '9876543210' });
+      }, 1500);
     } catch (error) {
       setMessage(`❌ Error: ${error.message}`);
     }
@@ -31,7 +27,7 @@ export default function SignupScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Signup</Text>
+      <Text style={styles.title}>Login</Text>
 
       <TextInput
         style={styles.input}
@@ -40,6 +36,7 @@ export default function SignupScreen() {
         autoCapitalize="none"
         onChangeText={setEmail}
       />
+
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -48,12 +45,8 @@ export default function SignupScreen() {
         onChangeText={setPassword}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSignup}>
-        <Text style={styles.buttonText}>SIGNUP</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => router.push('/login')}>
-        <Text style={{ color: 'blue', marginTop: 12 }}>Already have an account? Log in</Text>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>LOGIN</Text>
       </TouchableOpacity>
 
       {message && <Text style={styles.message}>{message}</Text>}
@@ -66,7 +59,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
   input: { borderWidth: 1, padding: 10, marginVertical: 8, borderRadius: 4 },
   button: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#4CAF50',
     padding: 15,
     alignItems: 'center',
     borderRadius: 4,

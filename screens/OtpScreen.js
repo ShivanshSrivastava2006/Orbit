@@ -1,11 +1,11 @@
-// app/Otp.tsx
+import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from "react";
-import { View, TextInput, Button, Text, StyleSheet, Alert } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function OtpScreen() {
-  const { phone } = useLocalSearchParams(); // phone passed via URL
-  const router = useRouter();
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { phone } = route.params || {}; // phone passed via URL
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState("send");
 
@@ -17,7 +17,7 @@ export default function OtpScreen() {
 
   const sendOtp = async () => {
     try {
-      const res = await fetch("http://192.168.225.101:5000/send-otp", {
+      const res = await fetch("http://192.168.0.185:5050/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
@@ -32,7 +32,7 @@ export default function OtpScreen() {
 
   const verifyOtp = async () => {
     try {
-      const res = await fetch("http://192.168.225.101:5000/verify-otp", {
+      const res = await fetch("http://192.168.0.185:5050/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp }),
@@ -41,7 +41,7 @@ export default function OtpScreen() {
 
       if (data.message.toLowerCase().includes("verified")) {
         Alert.alert("Success", data.message);
-        router.replace("/(tabs)/home"); // ✅ make sure this path matches your home route
+        navigation.replace('FriendSelector'); 
       } else {
         Alert.alert("Failed", data.message);
       }

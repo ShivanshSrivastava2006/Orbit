@@ -13,17 +13,23 @@ const otpStore = {}; // In-memory store: { phone: otp }
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+app.get('/', (req, res) => {
+  res.send("✅ API is live");
+});
+
+
 
 // Send OTP
 app.post("/send-otp", (req, res) => {
   const { phone } = req.body;
   if (!phone) {
+    console.log("❌ [send-otp] Missing phone");
     return res.status(400).json({ message: "Phone number is required" });
   }
 
   const otp = generateOTP();
   otpStore[phone] = otp;
-  console.log(`📲 OTP for ${phone}: ${otp}`);
+  console.log(`📲 [send-otp] OTP for ${phone}: ${otp}`);
 
   res.json({ message: `OTP sent to ${phone}` });
 });
@@ -32,19 +38,28 @@ app.post("/send-otp", (req, res) => {
 app.post("/verify-otp", (req, res) => {
   const { phone, otp } = req.body;
 
+  console.log(`🔍 [verify-otp] phone: ${phone}, otp: ${otp}`);
+  console.log("🗃️  Current otpStore:", otpStore);
+
   if (!phone || !otp) {
+    console.log("❌ [verify-otp] Missing phone or otp");
     return res.status(400).json({ message: "Phone and OTP required" });
   }
 
   if (otpStore[phone] === otp) {
-    delete otpStore[phone]; // remove OTP once verified
+    console.log(`✅ [verify-otp] OTP match for ${phone}`);
+    delete otpStore[phone];
     return res.json({ message: "✅ OTP verified" });
   } else {
+    console.log(`❌ [verify-otp] OTP mismatch for ${phone}`);
     return res.status(401).json({ message: "❌ Invalid OTP" });
   }
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log("🚀 Server file loaded");
-  console.log(`✅ Server running at http://localhost:${port}`);
+  console.log(`✅ Server running at http://0.0.0.0:${port}`);
 });
+
+
+setInterval(() => {}, 1000);
