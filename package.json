@@ -1,31 +1,8 @@
 {
-<<<<<<< HEAD
-  "name": "orbit",
-  "license": "0BSD",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
-  },
-  "dependencies": {
-    "@react-navigation/native": "^7.1.10",
-    "@react-navigation/native-stack": "^7.3.14",
-    "expo": "~53.0.11",
-    "expo-status-bar": "~2.2.3",
-    "react": "19.0.0",
-    "react-native": "0.79.3",
-    "react-native-safe-area-context": "^5.4.1",
-    "react-native-screens": "^4.11.1"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.20.0"
-=======
   "name": "orbit-app",
-  "main": "expo-router/entry",
   "version": "1.0.0",
+  "main": "expo-router/entry",
+  "private": true,
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -38,7 +15,8 @@
     "@expo/vector-icons": "^14.1.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
-    "@react-navigation/native": "^7.1.6",
+    "@react-navigation/native": "^7.1.10",
+    "@react-navigation/native-stack": "^7.3.14",
     "expo": "~53.0.11",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.6",
@@ -69,7 +47,5 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
     "typescript": "~5.8.3"
->>>>>>> 0ceae7d (Initial commit: Expo app with Firebase auth + Firestore)
-  },
-  "private": true
+  }
 }

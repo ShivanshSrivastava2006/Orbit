@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase'; // adjust path if needed
+import { auth } from '../firebase'; // adjust if needed
 import { useRouter } from 'expo-router';
 
 export default function LoginScreen() {
@@ -11,17 +11,20 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const handleLogin = async () => {
-  setMessage(null);
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    setMessage(`✅ Logged in as ${userCredential.user.email}`);
+    setMessage(null);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      setMessage(`✅ Logged in as ${userCredential.user.email}`);
 
-    // Navigate to a tab screen
-    setTimeout(() => router.push('/(tabs)/home'), 2000);
-  } catch (error) {
-    setMessage(`❌ Error: ${error.message}`);
-  }
-};
+      // Navigate to OTP screen with mock phone number
+      setTimeout(() => {
+       router.push('/Otp?phone=9876543210');
+
+      }, 1500);
+    } catch (error) {
+      setMessage(`❌ Error: ${error.message}`);
+    }
+  };
 
   return (
     <View style={styles.container}>
