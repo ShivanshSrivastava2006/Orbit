@@ -1,14 +1,9 @@
 import React from 'react';
-import { Button, Image, StyleSheet, Text, View } from 'react-native';
+import { Button, StyleSheet, Text, View } from 'react-native';
 
 export default function Onboarding({ navigation }) {
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../assets/icon_temp.jpeg')} // add any image you want
-        style={styles.image}
-        resizeMode="contain"
-      />
       <Text style={styles.title}>Welcome to the Hangout App!</Text>
       <Text style={styles.subtitle}>Select your 8 closest friends & hang out better.</Text>
       <Button

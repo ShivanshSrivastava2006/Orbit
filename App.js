@@ -4,9 +4,11 @@ import React from 'react';
 
 import AuthScreen from './screens/AuthScreen';
 import FriendSelector from './screens/FriendSelector';
+import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import Onboarding from './screens/Onboarding';
 import OtpScreen from './screens/OtpScreen';
+import ProfileScreen from './screens/ProfileScreen';
 import SignupScreen from './screens/SignupScreen';
 
 const Stack = createNativeStackNavigator();
@@ -21,6 +23,8 @@ export default function App() {
         <Stack.Screen name="Otp" component={OtpScreen} />
         <Stack.Screen name="FriendSelector" component={FriendSelector} />
         <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
