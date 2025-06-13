@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 
 const app = express();
-const port = 5000;
+const port = 5050;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -16,7 +16,6 @@ function generateOTP() {
 app.get('/', (req, res) => {
   res.send("✅ API is live");
 });
-
 
 
 // Send OTP
