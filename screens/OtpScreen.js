@@ -1,3 +1,5 @@
+// to use the mock OTP API - 
+// EDIT YOUR IP ADDRESS at 2 places - as commented below
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from "react";
 import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
@@ -17,7 +19,7 @@ export default function OtpScreen() {
 
   const sendOtp = async () => {
     try {
-      const res = await fetch("http://192.168.225.101:5050/send-otp", {
+      const res = await fetch("http://192.168.225.101:5050/send-otp", { // ⬅️ edit YOUR IP ADDRESS HERE
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
@@ -32,14 +34,14 @@ export default function OtpScreen() {
 
   const verifyOtp = async () => {
     try {
-      const res = await fetch("http://192.168.225.101:5050/verify-otp", {
+      const res = await fetch("http://192.168.225.101:5050/verify-otp", { // ⬅️ edit YOUR IP ADDRESS HERE
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp }),
       });
       const data = await res.json();
 
-      if (data.message.toLowerCase().includes("verified")) {
+      if (data.message.toLowerCase().includes("verified")) { 
         Alert.alert("Success", data.message);
         navigation.replace('FriendSelector'); 
       } else {
