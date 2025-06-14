@@ -5,7 +5,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import AllUsers from './screens/AllUsers';
 import IncomingRequests from './screens/IncomingRequests';
 import MyConnections from './screens/MyConnections';
-
+import MyNetwork from './screens/MyNetwork';
 const Tab = createBottomTabNavigator();
 
 export default function Tabs() {
@@ -16,6 +16,7 @@ export default function Tabs() {
       <Tab.Screen name="IncomingRequests" component={IncomingRequests} />
       <Tab.Screen name="MyConnections" component={MyConnections} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="MyNetwork" component={MyNetwork} />
     </Tab.Navigator>
   );
 }

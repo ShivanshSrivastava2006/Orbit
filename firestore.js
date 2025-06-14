@@ -61,16 +61,16 @@ export async function acceptConnectionRequest(fromUid, toUid) {
  * Get 1st-degree connections for a user
  */
 export async function getFirstDegreeConnections(uid) {
-  const q = query(
-    collection(db, 'connections'),
-    where('users', 'array-contains', uid)
-  );
+  const q = query(collection(db, 'connections'), where('users', 'array-contains', uid));
   const snap = await getDocs(q);
+  console.log("🔍 Connections fetched for:", uid, snap.docs.map(d => d.data()));
+
   return snap.docs.map(doc => {
     const users = doc.data().users;
     return users.find(user => user !== uid);
   });
 }
+
 
 /**
  * Get 2nd-degree connections for a user
@@ -87,6 +87,8 @@ export async function getSecondDegreeConnections(uid) {
       }
     }
   }
+
+  console.log("🔁 2nd-degree UIDs:", [...secondDegreeSet]);
 
   return Array.from(secondDegreeSet);
 }

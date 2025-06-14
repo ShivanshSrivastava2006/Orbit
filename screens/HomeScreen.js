@@ -35,7 +35,7 @@ export default function HomeScreen() {
       <View style={styles.spacer} />
      <Button
   title="View Incoming Requests"
-  onPress={() => navigation.navigate('IncomingRequests', { uid: currentUid })}
+  onPress={() => navigation.navigate('MyNetwork', { uid })}
 />
       <View style={styles.spacer} />
       <Button title="My Connections" onPress={() => navigation.navigate('MyConnections', { uid })} />
