@@ -17,7 +17,7 @@ export default function OtpScreen() {
 
   const sendOtp = async () => {
     try {
-      const res = await fetch("http://192.168.0.185:5050/send-otp", {
+      const res = await fetch("http://192.168.225.101:5050/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
@@ -32,7 +32,7 @@ export default function OtpScreen() {
 
   const verifyOtp = async () => {
     try {
-      const res = await fetch("http://192.168.0.185:5050/verify-otp", {
+      const res = await fetch("http://192.168.225.101:5050/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp }),

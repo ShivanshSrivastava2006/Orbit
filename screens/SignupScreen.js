@@ -8,7 +8,10 @@ import { auth, db } from '../firebase';
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState(null);
+   const [message, setMessage] = useState(null);
+  const [name, setName] = useState('');
+const [bio, setBio] = useState('');
+ 
   const navigation = useNavigation();
 
   const handleSignup = async () => {
@@ -19,11 +22,14 @@ export default function SignupScreen() {
 
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
+        name: name.trim(),
+  bio: bio.trim(),
         createdAt: new Date(),
       });
 
       setMessage(`✅ Signup successful for ${user.email}`);
-      setTimeout(() => navigation.replace('FriendSelector'), 2000); // <- better than push
+  setTimeout(() => navigation.replace('AllUsers', { uid: user.uid }), 2000);
+ // <- better than push
     } catch (error) {
       setMessage(`❌ Error: ${error.message}`);
     }
@@ -47,7 +53,18 @@ export default function SignupScreen() {
         secureTextEntry
         onChangeText={setPassword}
       />
-
+<TextInput
+  style={styles.input}
+  placeholder="Your Name"
+  value={name}
+  onChangeText={setName}
+/>
+<TextInput
+  style={styles.input}
+  placeholder="Short Bio (optional)"
+  value={bio}
+  onChangeText={setBio}
+/>
       <TouchableOpacity style={styles.button} onPress={handleSignup}>
         <Text style={styles.buttonText}>SIGNUP</Text>
       </TouchableOpacity>

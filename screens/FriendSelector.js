@@ -72,7 +72,9 @@ export default function FriendSelector({ navigation }) {
       );
       Alert.alert('✅', 'Friends saved!');
       setTimeout(() => {
-      navigation.replace('Home');
+     navigation.navigate('Main');
+
+
       }, 1000); // 1 second delay to let alert show
     } catch (err) {
       console.error('❌ Failed to save friends:', err);
