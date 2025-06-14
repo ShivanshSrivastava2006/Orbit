@@ -1,3 +1,4 @@
+import { doc, setDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -7,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { auth, db } from '../firebase';
 
 const dummyFriends = [
   { id: '1', name: 'Vaibhav' },
@@ -30,7 +32,7 @@ export default function FriendSelector({ navigation }) {
     } else if (selected.length < 8) {
       setSelected([...selected, id]);
     } else {
-      Alert.alert("Limit Reached", "You can only select 8 friends.");
+      Alert.alert('Limit Reached', 'You can only select 8 friends.');
     }
   };
 
@@ -50,41 +52,32 @@ export default function FriendSelector({ navigation }) {
     );
   };
 
-  // const handleContinue = () => {
-  //   if (selected.length !== 8) {
-  //     Alert.alert("Select 8 Friends", "Please select exactly 8 friends to continue.");
-  //     return;
-  //   }
-
-  //   // You can store this to Firebase or Context later
-  //   navigation.replace("Home"); // Go to placeholder Home screen
-  // };
   const handleContinue = async () => {
     if (selected.length !== 8) {
-      Alert.alert("Select 8 Friends", "Please select exactly 8 friends to continue.");
+      Alert.alert('Select 8 Friends', 'Please select exactly 8 friends to continue.');
       return;
     }
-  
-    // 🔒 TEMPORARY: skip saving to Firestore (blocked by rules - pending change...)
-    // const user = auth.currentUser;
-    // if (!user) {
-    //   Alert.alert("Not logged in");
-    //   return;
-    // }
-  
-    // try {
-    //   await setDoc(doc(db, 'users', user.uid), {
-    //     friends: selected,
-    //   }, { merge: true });
-  
-    //   Alert.alert("✅", "Friends saved!");
-    // } catch (err) {
-    //   console.error("❌ Failed to save friends:", err);
-    //   Alert.alert("Error", "Couldn't save friends to backend.");
-    // }
-  
-    console.log("🚧 Skipped Firestore. Navigating to Home...");
-    navigation.replace("Home");
+
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('Not logged in');
+      return;
+    }
+
+    try {
+      await setDoc(
+        doc(db, 'users', user.uid),
+        { friends: selected },
+        { merge: true }
+      );
+      Alert.alert('✅', 'Friends saved!');
+      setTimeout(() => {
+      navigation.replace('Home');
+      }, 1000); // 1 second delay to let alert show
+    } catch (err) {
+      console.error('❌ Failed to save friends:', err);
+      Alert.alert('Error', "Couldn't save friends to backend.");
+    }
   };
 
   return (
@@ -107,7 +100,7 @@ export default function FriendSelector({ navigation }) {
         onPress={handleContinue}
       >
         <Text style={styles.buttonText}>
-          {selected.length === 8 ? "Continue" : `${selected.length}/8 selected`}
+          {selected.length === 8 ? 'Continue' : `${selected.length}/8 selected`}
         </Text>
       </TouchableOpacity>
     </View>
