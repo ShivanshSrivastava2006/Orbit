@@ -78,7 +78,8 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
 
    You’ll see a QR code in the terminal. Use any of the following:
 
-   - 📱 Scan with Expo Go on Android/iOS
+   - 📱 Scan with Expo Go on Android(Playstore)/iOS
+   - 👨🏻‍💻 Press 'w' to directly open using Web App
    - 🧪 Use a development build
    - 💻 Launch on Android emulator
    - 🍏 Open in iOS simulator
@@ -86,11 +87,15 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
    Learn more here:  
    [Expo Development Builds](https://docs.expo.dev/develop/development-builds/introduction/)
 
-4. (Optional) If the app crashes or screens aren’t loading correctly:
-
+   - (Optional) If the app crashes or screens aren’t loading correctly:
+   
    ```bash
    npx expo start --clear
    ```
+   
+5. (Required) If you want to test OTP login, setup the mock OTP API:
+
+   See section below: [🔌 Mock OTP API (Local Testing)](#-mock-otp-api-local-testing)
 
 ---
 
