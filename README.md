@@ -52,7 +52,7 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/YOUR-USERNAME/orbit.git
+   git clone https://github.com/ShivanshSrivastava2006/Orbit.git
    cd orbit
    ```
 
@@ -76,22 +76,67 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
    npx expo start
    ```
 
-   You’ll see a QR code in terminal output. Use any of the following:
+   You’ll see a QR code in the terminal. Use any of the following:
 
-   - 📱 Expo Go (scan QR on Android/iOS)
-   - 🧪 Development builds (link)
-   - 💻 Android emulator
-   - 🍏 iOS simulator
-   
+   - 📱 Scan with Expo Go on Android/iOS
+   - 🧪 Use a development build
+   - 💻 Launch on Android emulator
+   - 🍏 Open in iOS simulator
 
-   More info:  
-   https://docs.expo.dev/develop/development-builds/introduction/
+   Learn more here:  
+   [Expo Development Builds](https://docs.expo.dev/develop/development-builds/introduction/)
 
-4. (Optional) Clear the Metro cache if screens aren’t loading properly:
+4. (Optional) If the app crashes or screens aren’t loading correctly:
 
    ```bash
    npx expo start --clear
    ```
+
+---
+
+## 🔌 Mock OTP API (Local Testing)
+
+This project uses a mock Express server to simulate OTP-based login. To run it locally:
+
+1. In a separate terminal:
+
+   ```bash
+   cd otp-mock-api
+   npm install
+   node index.js
+   ```
+
+2. You should see:
+
+   ```
+   ✅ Server running at http://localhost:5050
+   ```
+
+3. Replace the URL in `OtpScreen.js` with your local IP address _(step - 4)_ (not localhost).
+
+   Demonstrated:
+
+   ```js
+   const res = await fetch("http://192.168.x.x:5050/send-otp", { // ⬅️ edit YOUR IP ADDRESS HERE
+
+   and
+   
+   const res = await fetch("http://192.168.x.x:5050/send-otp", { // ⬅️ edit YOUR IP ADDRESS HERE
+   ```
+
+4. To find your IP: 
+
+   - On macOS:
+     ```bash
+     ipconfig getifaddr en0
+     ```
+   - On Windows (Command Prompt):
+     ```cmd
+     ipconfig
+     ```
+     Look under "Wireless LAN adapter Wi-Fi" > IPv4 Address.
+
+⚠️ Make sure your phone and laptop are connected to the same Wi-Fi network. Localhost won’t work on mobile.
 
 ---
 
@@ -107,18 +152,3 @@ This moves all demo code into the app-example/ folder and gives you a blank app/
 
 More on file-based routing in Expo:  
 https://docs.expo.dev/router/introduction/
-
----
-
-## 🔌 Mock OTP API (Local)
-
-If you're testing the OTP screen, make sure the mock Express API is running:
-
-```bash
-cd otp-mock-api
-node index.js
-```
-
-Server should log: ✅ Server running at http://localhost:5050
-Use your local IP (not localhost) in OtpScreen.js if you're on a phone.
-
