@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { getFirstDegreeConnections, getSecondDegreeConnections } from '../firestore';
+import { getFirstDegreeConnections, getSecondDegreeConnections, buildConnectionGraph } from '../firestore';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config';
 import { auth } from '../firebase';
 
 export default function MyNetwork({ route }) {
-    const currentUid = route?.params?.uid ?? auth.currentUser?.uid ?? null;
+  const currentUid = route?.params?.uid ?? auth.currentUser?.uid ?? null;
 
-     
-console.log("🧠 Received UID in MyNetwork:", currentUid);
+  console.log("🧠 Received UID in MyNetwork:", currentUid);
+
   const [firstDegree, setFirstDegree] = useState([]);
   const [secondDegree, setSecondDegree] = useState([]);
 
+  // 🔁 Fetch 1st and 2nd-degree connections
   useEffect(() => {
     if (!currentUid) return;
 
@@ -21,8 +22,9 @@ console.log("🧠 Received UID in MyNetwork:", currentUid);
 
       const first = await getFirstDegreeConnections(currentUid);
       const second = await getSecondDegreeConnections(currentUid);
-console.log("👥 1st-degree UIDs:", first);
-console.log("🔁 2nd-degree UIDs:", second);
+
+      console.log("👥 1st-degree UIDs:", first);
+      console.log("🔁 2nd-degree UIDs:", second);
 
       const getProfiles = async (uids) => {
         const results = await Promise.all(uids.map(async (uid) => {
@@ -41,6 +43,17 @@ console.log("🔁 2nd-degree UIDs:", second);
     }
 
     fetchConnections();
+  }, [currentUid]);
+
+  // 📊 Build and log connection graph
+  useEffect(() => {
+    async function testGraph() {
+      if (!currentUid) return;
+      const graph = await buildConnectionGraph(currentUid);
+      console.log("📊 Final Graph:", graph);
+    }
+
+    testGraph();
   }, [currentUid]);
 
   return (

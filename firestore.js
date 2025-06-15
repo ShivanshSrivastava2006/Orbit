@@ -92,3 +92,61 @@ export async function getSecondDegreeConnections(uid) {
 
   return Array.from(secondDegreeSet);
 }
+/**
+ * Build full connection graph for a user
+ * Includes 1st and 2nd-degree connections
+ */
+export async function buildConnectionGraph(uid) {
+  const connectionsRef = collection(db, 'connections');
+
+  // Step 1: Get all connections where uid is included
+  const firstDegreeUIDs = new Set();
+  const firstSnap = await getDocs(query(connectionsRef, where('users', 'array-contains', uid)));
+
+  firstSnap.forEach(doc => {
+    const users = doc.data().users;
+    users.forEach(userId => {
+      if (userId !== uid) firstDegreeUIDs.add(userId);
+    });
+  });
+
+  // Step 2: Get all connections of 1st-degree users (for 2nd-degree)
+  const secondDegreeUIDs = new Set();
+
+  await Promise.all([...firstDegreeUIDs].map(async (friendUid) => {
+    const friendSnap = await getDocs(query(connectionsRef, where('users', 'array-contains', friendUid)));
+    friendSnap.forEach(doc => {
+      const users = doc.data().users;
+      users.forEach(u => {
+        if (u !== uid && !firstDegreeUIDs.has(u)) {
+          secondDegreeUIDs.add(u);
+        }
+      });
+    });
+  }));
+
+  // Step 3: Build unique list of users for nodes
+  const allUIDs = new Set([uid, ...firstDegreeUIDs, ...secondDegreeUIDs]);
+
+  const nodes = await Promise.all([...allUIDs].map(async userId => {
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userData = userDoc.data() || {};
+    return {
+      id: userId,
+      name: userData.name || 'Unknown',
+    };
+  }));
+
+  // Step 4: Build edges from all connections
+  const allConnsSnap = await getDocs(connectionsRef);
+  const edges = [];
+
+  allConnsSnap.forEach(doc => {
+    const users = doc.data().users;
+    if (users.length === 2 && allUIDs.has(users[0]) && allUIDs.has(users[1])) {
+      edges.push({ source: users[0], target: users[1] });
+    }
+  });
+
+  return { nodes, edges };
+}
