@@ -1,13 +1,15 @@
-import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
 
-import Onboarding from './screens/Onboarding';
-import LoginScreen from './screens/LoginScreen';
-import SignupScreen from './screens/SignupScreen'; // ✅ Import this
-import OtpScreen from './screens/OtpScreen';
+
 import FriendSelector from './screens/FriendSelector';
+import GraphScreen from './screens/GraphScreen';
+import LoginScreen from './screens/LoginScreen';
+import Onboarding from './screens/Onboarding';
+import OtpScreen from './screens/OtpScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import SignupScreen from './screens/SignupScreen'; // ✅ Import this
 import Tabs from './Tabs'; // ✅ This contains Home, etc.
 
 const Stack = createNativeStackNavigator();
@@ -23,6 +25,7 @@ export default function App() {
         <Stack.Screen name="FriendSelector" component={FriendSelector} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Main" component={Tabs} options={{ headerShown: false }} />
+        <Stack.Screen name="Graph" component={GraphScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

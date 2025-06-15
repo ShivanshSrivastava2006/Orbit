@@ -33,12 +33,13 @@ export default function HomeScreen() {
       <View style={styles.spacer} />
       <Button title="Find Friends" onPress={() => navigation.navigate('AllUsers', { uid })} />
       <View style={styles.spacer} />
-     <Button
-  title="View Incoming Requests"
-  onPress={() => navigation.navigate('MyNetwork', { uid })}
-/>
+     <Button title="View Incoming Requests" onPress={() => navigation.navigate('MyNetwork', { uid })} />
       <View style={styles.spacer} />
       <Button title="My Connections" onPress={() => navigation.navigate('MyConnections', { uid })} />
+      <View style={styles.spacer} />
+      <Button title="My Orbit (Graph)" onPress={() => navigation.navigate('Graph', { uid })} />
     </View>
+    
+
   );
 }
