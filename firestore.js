@@ -1,15 +1,18 @@
-import { db } from './config'; // Firestore instance
 import {
   collection,
+  deleteDoc,
   doc,
-  setDoc,
+  getDoc,
   getDocs,
   query,
-  where,
-  getDoc,
-  arrayUnion,
-  deleteDoc,
+  setDoc,
+  where
 } from 'firebase/firestore';
+import { db } from './config'; // Firestore instance
+
+
+// ✅ PATCHED FIRESTORE.JS (only buildConnectionGraph was changed)
+
 
 /**
  * Ensure user is in Firestore users collection (called after login)
@@ -96,60 +99,70 @@ export async function getSecondDegreeConnections(uid) {
  * Build full connection graph for a user
  * Includes 1st and 2nd-degree connections
  */
+// ... (other unchanged functions)
+
 export async function buildConnectionGraph(uid) {
-  const connectionsRef = collection(db, 'connections');
+  try {
+    const connectionsRef = collection(db, 'connections');
+    const requestsRef = collection(db, 'connectionRequests');
 
-  // Step 1: Get all connections where uid is included
-  const firstDegreeUIDs = new Set();
-  const firstSnap = await getDocs(query(connectionsRef, where('users', 'array-contains', uid)));
+    const firstDegreeUIDs = new Set();
+    const firstSnap = await getDocs(query(connectionsRef, where('users', 'array-contains', uid)));
 
-  firstSnap.forEach(doc => {
-    const users = doc.data().users;
-    users.forEach(userId => {
-      if (userId !== uid) firstDegreeUIDs.add(userId);
-    });
-  });
-
-  // Step 2: Get all connections of 1st-degree users (for 2nd-degree)
-  const secondDegreeUIDs = new Set();
-
-  await Promise.all([...firstDegreeUIDs].map(async (friendUid) => {
-    const friendSnap = await getDocs(query(connectionsRef, where('users', 'array-contains', friendUid)));
-    friendSnap.forEach(doc => {
-      const users = doc.data().users;
-      users.forEach(u => {
-        if (u !== uid && !firstDegreeUIDs.has(u)) {
-          secondDegreeUIDs.add(u);
-        }
+    firstSnap.forEach(doc => {
+      const users = doc.data()?.users || [];
+      users.forEach(userId => {
+        if (userId !== uid) firstDegreeUIDs.add(userId);
       });
     });
-  }));
 
-  // Step 3: Build unique list of users for nodes
-  const allUIDs = new Set([uid, ...firstDegreeUIDs, ...secondDegreeUIDs]);
+    const secondDegreeUIDs = new Set();
 
-  const nodes = await Promise.all([...allUIDs].map(async userId => {
-    const userDoc = await getDoc(doc(db, 'users', userId));
-    const userData = userDoc.data() || {};
-    return {
-      id: userId,
-      name: userData.name || 'Unknown',
-    };
-  }));
+    await Promise.all([...firstDegreeUIDs].map(async (friendUid) => {
+      const friendSnap = await getDocs(query(connectionsRef, where('users', 'array-contains', friendUid)));
+      friendSnap.forEach(doc => {
+        const users = doc.data()?.users || [];
+        users.forEach(u => {
+          if (u !== uid && !firstDegreeUIDs.has(u)) {
+            secondDegreeUIDs.add(u);
+          }
+        });
+      });
+    }));
 
-  // Step 4: Build edges from all connections
-  const allConnsSnap = await getDocs(connectionsRef);
-  const edges = [];
+    const allUIDs = new Set([uid, ...firstDegreeUIDs, ...secondDegreeUIDs]);
 
-  allConnsSnap.forEach(doc => {
-    const users = doc.data().users;
-    if (users.length === 2 && allUIDs.has(users[0]) && allUIDs.has(users[1])) {
-      edges.push({ source: users[0], target: users[1] });
-    }
-  });
+    const sentRequestsSnap = await getDocs(query(requestsRef, where('from', '==', uid)));
+    const sentRequestUIDs = new Set(sentRequestsSnap.docs.map(doc => doc.data().to));
 
-  return { nodes, edges };
+    const nodes = await Promise.all([...allUIDs].map(async userId => {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      return {
+        id: userId,
+        name: userData.name || 'Unknown',
+        bio: userData.bio || '',
+        requestSent: sentRequestUIDs.has(userId),
+      };
+    }));
+
+    const allConnsSnap = await getDocs(connectionsRef);
+    const edges = [];
+
+    allConnsSnap.forEach(doc => {
+      const users = doc.data()?.users || [];
+      if (users.length === 2 && allUIDs.has(users[0]) && allUIDs.has(users[1])) {
+        edges.push({ source: users[0], target: users[1] });
+      }
+    });
+
+    return { nodes, edges };
+  } catch (err) {
+    console.error("🔥 buildConnectionGraph error:", err);
+    return { nodes: [], edges: [] };
+  }
 }
+
 export async function sendHangoutRequest(fromUid, toUid) {
   if (!fromUid || !toUid || fromUid === toUid) {
     throw new Error("Invalid UIDs provided");
@@ -186,3 +199,5 @@ export async function cancelHangoutRequest(fromUid, toUid) {
 
   console.log("❌ Hangout request cancelled:", fromUid, "to", toUid);
 }
+
+

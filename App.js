@@ -1,7 +1,9 @@
+import 'react-native-gesture-handler';
+import 'react-native-reanimated'; // 👈 required for Reanimated 2+
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
-
 
 import FriendSelector from './screens/FriendSelector';
 import GraphScreen from './screens/GraphScreen';
