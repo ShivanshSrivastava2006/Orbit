@@ -6,6 +6,8 @@ import AllUsers from './screens/AllUsers';
 import IncomingRequests from './screens/IncomingRequests';
 import MyConnections from './screens/MyConnections';
 import MyNetwork from './screens/MyNetwork';
+import SendHangoutRequests from './screens/SendHangoutRequests'; // ✅ Add this line
+import AllHangoutUsers from './screens/AllHangoutUsers';
 const Tab = createBottomTabNavigator();
 
 export default function Tabs() {
@@ -17,6 +19,11 @@ export default function Tabs() {
       <Tab.Screen name="MyConnections" component={MyConnections} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
       <Tab.Screen name="MyNetwork" component={MyNetwork} />
+      <Tab.Screen
+  name="AllHangoutUsers"
+  component={AllHangoutUsers}
+  options={{ title: 'Hangout' }}
+/>
     </Tab.Navigator>
   );
 }

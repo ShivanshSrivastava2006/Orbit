@@ -30,7 +30,7 @@ export async function ensureUserExists(user) {
 /**
  * Send a connection request from one user to another
  */
-export async function sendConnectionRequest(fromUid, toUid) {
+export async function sendconnectionRequest(fromUid, toUid) {
   const ref = doc(db, 'connectionRequests', `${fromUid}_${toUid}`);
   await setDoc(ref, {
     from: fromUid,
@@ -149,4 +149,40 @@ export async function buildConnectionGraph(uid) {
   });
 
   return { nodes, edges };
+}
+export async function sendHangoutRequest(fromUid, toUid) {
+  if (!fromUid || !toUid || fromUid === toUid) {
+    throw new Error("Invalid UIDs provided");
+  }
+
+  const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
+
+  await setDoc(ref, {
+    from: fromUid,
+    to: toUid,
+    status: 'pending',
+    createdAt: new Date(),
+  });
+
+  //console.log("📨 Hangout request sent from", fromUid, "to", toUid);
+}
+
+/**
+ * Accept a hangout request
+ */
+export async function acceptHangoutRequest(fromUid, toUid) {
+  const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
+  await setDoc(ref, { status: 'accepted' }, { merge: true });
+
+  console.log("✅ Hangout request accepted between", fromUid, "and", toUid);
+}
+
+/**
+ * Cancel or delete a hangout request
+ */
+export async function cancelHangoutRequest(fromUid, toUid) {
+  const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
+  await deleteDoc(ref);
+
+  console.log("❌ Hangout request cancelled:", fromUid, "to", toUid);
 }
