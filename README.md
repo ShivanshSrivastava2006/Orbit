@@ -126,7 +126,7 @@ This project uses a mock Express server to simulate OTP-based login. To run it l
    ```
    and
    ```js
-   const res = await fetch("http://192.168.x.x:5050/send-otp", { // ⬅️ edit YOUR IP ADDRESS HERE
+   const res = await fetch("http://192.168.x.x:5050/verify-otp", { // ⬅️ edit YOUR IP ADDRESS HERE
    ```
 
 4. To find your IP: 
