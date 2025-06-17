@@ -5,11 +5,11 @@ export default function Onboarding({ navigation }) {
   return (
     <View style={styles.container}>
       {/* Top Logo */}
-      <Image source={require('../assets/logo.png')} style={styles.logo} />
+      <Image source={require('../assets/images/Orbit.jpeg.jpg')} style={styles.logo} />
 
       {/* Animated Orbit GIF */}
       <Image
-        source={require('../assets/orbit.gif')} // Make sure this exists in your assets/
+        source={require('../assets/Onboarding Giffy.gif')} // Make sure this exists in your assets/
         style={styles.gif}
       />
 
