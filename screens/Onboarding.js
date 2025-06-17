@@ -1,9 +1,6 @@
 import React from 'react';
 import { Button, StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
-
 export default function Onboarding({ navigation }) {
   return (
     <View style={styles.container}>
