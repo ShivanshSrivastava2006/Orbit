@@ -117,7 +117,7 @@ This project uses a mock Express server to simulate OTP-based login. To run it l
    ✅ Server running at http://localhost:5050
    ```
 
-3. Replace the URL in `OtpScreen.js` with your local IP address _(step - 4)_ (not localhost).
+3. Replace the URL in `screens/OtpScreen.js` with your local IP address _(step - 4)_ (not localhost).
 
    Demonstrated:
 
