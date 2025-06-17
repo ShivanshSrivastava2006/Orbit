@@ -11,6 +11,7 @@ import {
   PanResponder,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -30,6 +31,7 @@ import { auth } from '../firebase';
 import {
   buildConnectionGraph,
   sendConnectionRequest,
+  sendHangoutRequest
 } from '../firestore';
 
 const AnimatedG = Animated.createAnimatedComponent(RNSVG_G);
@@ -56,7 +58,7 @@ function Node({ node, offset, uid, onPress }) {
       animatedProps={animatedProps}
       originX={x + offset.x}
       originY={y + offset.y}
-      onPressIn={onPress} // ✅ this works inside react-native-svg
+      onPressIn={onPress}
     >
       <Circle cx={x + offset.x} cy={y + offset.y} r={28} fill={color} />
       <SvgText
@@ -80,6 +82,7 @@ export default function GraphScreen() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [hangoutIdea, setHangoutIdea] = useState('');
 
   const pan = useRef({ x: 0, y: 0 });
   const uid = auth.currentUser?.uid;
@@ -184,7 +187,7 @@ export default function GraphScreen() {
       </Svg>
 
       {selected && (
-        <View style={styles.profileCard}>
+        <View style={styles.profileCardCentered}>
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => setSelected(null)}
@@ -201,6 +204,26 @@ export default function GraphScreen() {
               <Text style={styles.profileBio}>{selected.bio || 'No bio set'}</Text>
             </View>
           </View>
+
+          <TextInput
+            placeholder="Suggest a hangout idea..."
+            value={hangoutIdea}
+            onChangeText={setHangoutIdea}
+            style={styles.inputBox}
+          />
+
+          <TouchableOpacity
+            style={[styles.requestButton, hangoutIdea.trim() === '' && { backgroundColor: '#ccc' }]}
+            disabled={hangoutIdea.trim() === ''}
+            onPress={async () => {
+              await sendHangoutRequest(uid, selected.id, hangoutIdea.trim());
+              alert('✅ Hangout request sent!');
+              setHangoutIdea('');
+            }}
+          >
+            <Text style={styles.requestText}>Send Hangout Idea</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.requestButton, selected.requestSent && { backgroundColor: '#ccc' }]}
             disabled={selected.requestSent}
@@ -228,19 +251,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  profileCard: {
+  profileCardCentered: {
     position: 'absolute',
-    bottom: 20,
-    left: 16,
-    right: 16,
+    top: '20%',
+    left: 30,
+    right: 30,
     backgroundColor: '#fff',
     borderRadius: 14,
     padding: 16,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 6,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -256,6 +279,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: 10,
   },
   requestText: { color: '#fff', fontWeight: 'bold' },
   closeButton: {
@@ -266,4 +290,11 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   closeText: { fontSize: 20, fontWeight: 'bold', color: '#999' },
+  inputBox: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 12,
+  },
 });

@@ -163,21 +163,19 @@ export async function buildConnectionGraph(uid) {
   }
 }
 
-export async function sendHangoutRequest(fromUid, toUid) {
+export async function sendHangoutRequest(fromUid, toUid, idea) {
   if (!fromUid || !toUid || fromUid === toUid) {
     throw new Error("Invalid UIDs provided");
   }
 
   const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
-
   await setDoc(ref, {
     from: fromUid,
     to: toUid,
+    idea: idea || '',
     status: 'pending',
     createdAt: new Date(),
   });
-
-  //console.log("📨 Hangout request sent from", fromUid, "to", toUid);
 }
 
 /**
