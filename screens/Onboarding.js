@@ -1,57 +1,86 @@
 import React from 'react';
-import { Button, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { Button, StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+
+import React from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 
 export default function Onboarding({ navigation }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to the Hangout App!</Text>
-      <Text style={styles.subtitle}>Select your 8 closest friends & hang out better.</Text>
+      {/* Top Logo */}
+      <Image source={require('../assets/logo.png')} style={styles.logo} />
 
+      {/* Animated Orbit GIF */}
+      <Image
+        source={require('../assets/orbit.gif')} // Make sure this exists in your assets/
+        style={styles.gif}
+      />
+
+      {/* Tagline */}
+      <Text style={styles.title}>Meet. Vibe. Repeat.{"\n"}Welcome to Orbit.</Text>
+
+      {/* App Name Text */}
+      <Text style={styles.appName}>ORBIT</Text>
+
+      {/* Get Started Button */}
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={[styles.button, styles.signupButton]} onPress={() => navigation.navigate('Signup')}>
-        <Text style={styles.buttonText}>Signup</Text>
+        <Text style={styles.buttonText}>GET STARTED</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#F7F4FF', // Light lavender tone
     alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 22,
+  logo: {
+    width: 90,
+    height: 90,
+    resizeMode: 'contain',
     marginBottom: 20,
-    textAlign: 'center',
-    fontWeight: 'bold',
   },
-  subtitle: {
-    fontSize: 16,
+  gif: {
+    width: 220,
+    height: 150,
+    resizeMode: 'contain',
     marginBottom: 30,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
     textAlign: 'center',
-    color: '#555',
+    color: '#444',
+    marginBottom: 20,
+    lineHeight: 28,
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#6A5ACD', // Soft purple
+    marginBottom: 40,
   },
   button: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#6A5ACD', // Same purple shade as text
     paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 6,
-    marginVertical: 8,
-    width: '80%',
+    paddingHorizontal: 36,
+    borderRadius: 28,
     alignItems: 'center',
-  },
-  signupButton: {
-    backgroundColor: '#4CAF50',
+    width: '65%',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
     fontWeight: 'bold',
+    fontSize: 16,
+    letterSpacing: 1,
   },
 });
