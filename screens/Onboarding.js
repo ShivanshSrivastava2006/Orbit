@@ -1,83 +1,143 @@
 import React from 'react';
-import { Button, StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Video } from 'expo-av';
+import { useFonts, Orbitron_700Bold } from '@expo-google-fonts/orbitron';
 
 export default function Onboarding({ navigation }) {
+  const [fontsLoaded] = useFonts({
+    Orbitron_700Bold,
+  });
+
+  if (!fontsLoaded) return null;
+
   return (
-    <View style={styles.container}>
-      {/* Top Logo */}
-      <Image source={require('../assets/images/Orbit.jpeg.jpg')} style={styles.logo} />
+    <LinearGradient
+      colors={['#d8c4ff', '#ffe2e2']}
+      start={{ x: 0, y: 0.5 }}
+      end={{ x: 1, y: 0.5 }}
+      style={styles.container}
+    >
+      <View style={styles.content}>
+        <Image source={require('../assets/images/Logo.png')} style={styles.logo} />
+        <Text style={styles.appName}>ORBIT</Text>
 
-      {/* Animated Orbit GIF */}
-      <Image
-        source={require('../assets/Onboarding Giffy.gif')} // Make sure this exists in your assets/
-        style={styles.gif}
-      />
+        <View style={styles.videoWrapper}>
+          <Video
+            source={require('../assets/Onboarding GIF.mp4')}
+            rate={1.0}
+            volume={1.0}
+            isMuted={false}
+            resizeMode="cover"
+            shouldPlay
+            isLooping
+            style={styles.video}
+          />
+        </View>
 
-      {/* Tagline */}
-      <Text style={styles.title}>Meet. Vibe. Repeat.{"\n"}Welcome to Orbit.</Text>
+        <View style={styles.taglineWrapper}>
+          <Video
+            source={require('../assets/ConnectCollideChill.mp4')}
+            rate={1.0}
+            volume={1.0}
+            isMuted={false}
+            resizeMode="contain"
+            shouldPlay
+            isLooping
+            style={styles.taglineVideo}
+          />
+        </View>
+      </View>
 
-      {/* App Name Text */}
-      <Text style={styles.appName}>ORBIT</Text>
-
-      {/* Get Started Button */}
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
         <Text style={styles.buttonText}>GET STARTED</Text>
       </TouchableOpacity>
-    </View>
+    </LinearGradient>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F4FF', // Light lavender tone
-    alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 80,
+    justifyContent: 'space-between',
+  },
+  content: {
+    alignItems: 'center',
+    gap: 24,
   },
   logo: {
     width: 90,
     height: 90,
     resizeMode: 'contain',
-    marginBottom: 20,
-  },
-  gif: {
-    width: 220,
-    height: 150,
-    resizeMode: 'contain',
-    marginBottom: 30,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: '#444',
-    marginBottom: 20,
-    lineHeight: 28,
+    marginBottom: 10,
   },
   appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#6A5ACD', // Soft purple
-    marginBottom: 40,
+    fontSize: 30,
+    fontFamily: 'Orbitron_700Bold',
+    color: '#333',
+    marginBottom: 24,
   },
+  videoWrapper: {
+  width: 260,
+  height: 170,
+  borderRadius: 20,
+  overflow: 'hidden',
+  backgroundColor: '#121212',
+  padding: 2,
+  shadowColor: '#9b5de5',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.4,
+  shadowRadius: 12,
+  elevation: 10,
+  marginBottom: 16,
+  alignItems: 'flex-start',  // ensures the video shifts left from within
+},
+
+video: {
+  width: '100%',           // scale wider
+  height: '100%',
+  marginLeft: '-10%',      // shift left to crop the left side
+},
+
+  taglineWrapper: {
+  width: 300,
+  height: 94,
+  marginBottom: 20,
+  borderRadius: 20,
+  overflow: 'hidden',
+  alignItems: 'flex-start', // necessary for shift
+},
+
+taglineVideo: {
+  width: '120%',         // zoom in horizontally
+  height: '100%',
+  marginLeft: '-10%',    // crop from the left side
+},
+ 
   button: {
-    backgroundColor: '#6A5ACD', // Same purple shade as text
+    backgroundColor: '#84a0df',
     paddingVertical: 14,
-    paddingHorizontal: 36,
-    borderRadius: 28,
+    paddingHorizontal: 28,
+    borderRadius: 30,
     alignItems: 'center',
-    width: '65%',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    alignSelf: 'center',
+    marginBottom: 16,
+    shadowColor: '#999',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 6,
   },
   buttonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
     letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
   },
 });
