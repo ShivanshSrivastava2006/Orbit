@@ -80,27 +80,19 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 24,
   },
-  videoWrapper: {
+videoWrapper: {
   width: 260,
   height: 170,
-  borderRadius: 20,
+  borderRadius: 16,
   overflow: 'hidden',
-  backgroundColor: '#121212',
-  padding: 2,
-  shadowColor: '#9b5de5',
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.4,
-  shadowRadius: 12,
-  elevation: 10,
   marginBottom: 16,
-  alignItems: 'flex-start',  // ensures the video shifts left from within
 },
 
 video: {
-  width: '100%',           // scale wider
+  width: '100%',
   height: '100%',
-  marginLeft: '-10%',      // shift left to crop the left side
 },
+
 
   taglineWrapper: {
   width: 300,
