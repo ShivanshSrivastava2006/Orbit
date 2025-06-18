@@ -69,8 +69,15 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
    ```bash
    yarn install
    ```
+3. Install required Expo packages:
 
-3. Start the Expo app:
+   ```bash
+   npx expo install expo-av
+   npx expo install expo-linear-gradient
+   npx expo install @expo-google-fonts/orbitron expo-font
+   ```
+
+5. Start the Expo app:
 
    ```bash
    npx expo start
@@ -93,7 +100,7 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
    npx expo start --clear
    ```
    
-5. (Required) If you want to test OTP login, setup the mock OTP API:
+6. (Required) If you want to test OTP login, setup the mock OTP API:
 
    See section below: [🔌 Mock OTP API (Local Testing)](#-mock-otp-api-local-testing)
 
@@ -132,13 +139,17 @@ This project uses a mock Express server to simulate OTP-based login. To run it l
 4. To find your IP: 
 
    - On macOS:
+   - 
      ```bash
      ipconfig getifaddr en0
      ```
+     
    - On Windows (Command Prompt):
+   - 
      ```cmd
      ipconfig
      ```
+     
      Look under "Wireless LAN adapter Wi-Fi" > IPv4 Address.
 
 ⚠️ Make sure your phone and laptop are connected to the same Wi-Fi network. Localhost won’t work on mobile.
