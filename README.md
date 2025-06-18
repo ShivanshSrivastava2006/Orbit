@@ -86,6 +86,8 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
    You’ll see a QR code in the terminal. Use any of the following:
 
    - 📱 Scan with Expo Go on Android(Playstore)/iOS
+     🚨 _Make sure that your laptop and phone should be on the same Wifi network_ 
+     
    - 👨🏻‍💻 Press 'w' to directly open using Web App
    - 🧪 Use a development build
    - 💻 Launch on Android emulator
