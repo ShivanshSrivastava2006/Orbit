@@ -5,7 +5,9 @@ import {
   getDoc,
   getDocs,
   query,
+  serverTimestamp,
   setDoc,
+  updateDoc,
   where
 } from 'firebase/firestore';
 import { db } from './config'; // Firestore instance
@@ -21,7 +23,7 @@ export async function ensureUserExists(user) {
       uid: user.uid,
       name: user.name || '',
       phone: user.phoneNumber || '',
-      createdAt: new Date(),
+      createdAt: serverTimestamp(),
     });
   }
 }
@@ -35,7 +37,7 @@ export async function sendconnectionRequest(fromUid, toUid) {
     from: fromUid,
     to: toUid,
     status: 'pending',
-    createdAt: new Date(),
+    createdAt: serverTimestamp(),
   });
 }
 
@@ -47,11 +49,11 @@ export async function acceptConnectionRequest(fromUid, toUid) {
   const ref = doc(db, 'connections', connectionId);
   await setDoc(ref, {
     users: [fromUid, toUid],
-    createdAt: new Date(),
+    createdAt: serverTimestamp(),
   });
 
   const requestRef = doc(db, 'connectionRequests', `${fromUid}_${toUid}`);
-  await setDoc(requestRef, { status: 'accepted' }, { merge: true });
+  await updateDoc(requestRef, { status: 'accepted' });
 }
 
 /**
@@ -85,10 +87,39 @@ export async function getSecondDegreeConnections(uid) {
   return Array.from(secondDegreeSet);
 }
 
+/**
+ * Check if user is 1st or 2nd degree connection
+ */
+export async function getConnectionDegree(fromUid, toUid) {
+  const firstDegree = await getFirstDegreeConnections(fromUid);
+  if (firstDegree.includes(toUid)) {
+    return 1;
+  }
+  
+  const secondDegree = await getSecondDegreeConnections(fromUid);
+  if (secondDegree.includes(toUid)) {
+    return 2;
+  }
+  
+  return 0; // No connection
+}
+
+/**
+ * Find mutual friends between two users
+ */
+export async function getMutualFriends(fromUid, toUid) {
+  const fromFriends = await getFirstDegreeConnections(fromUid);
+  const toFriends = await getFirstDegreeConnections(toUid);
+  
+  return fromFriends.filter(friend => toFriends.includes(friend));
+}
+
 export async function buildConnectionGraph(uid) {
   try {
     const connectionsRef = collection(db, 'connections');
     const requestsRef = collection(db, 'connectionRequests');
+    const hangoutRequestsRef = collection(db, 'hangoutRequests');
+    const approvalRequestsRef = collection(db, 'secondDegreeApprovals');
 
     const firstDegreeUIDs = new Set();
     const firstSnap = await getDocs(query(connectionsRef, where('users', 'array-contains', uid)));
@@ -116,17 +147,47 @@ export async function buildConnectionGraph(uid) {
 
     const allUIDs = new Set([uid, ...firstDegreeUIDs, ...secondDegreeUIDs]);
 
+    // Get sent connection requests
     const sentRequestsSnap = await getDocs(query(requestsRef, where('from', '==', uid)));
     const sentRequestUIDs = new Set(sentRequestsSnap.docs.map(doc => doc.data().to));
+
+    // Get hangout requests status
+    const hangoutRequestsSnap = await getDocs(query(hangoutRequestsRef, where('from', '==', uid)));
+    const hangoutRequestsMap = new Map();
+    hangoutRequestsSnap.forEach(doc => {
+      const data = doc.data();
+      hangoutRequestsMap.set(data.to, data.status);
+    });
+
+    // Get approval requests status
+    const approvalRequestsSnap = await getDocs(query(approvalRequestsRef, where('from', '==', uid)));
+    const approvalRequestsMap = new Map();
+    approvalRequestsSnap.forEach(doc => {
+      const data = doc.data();
+      approvalRequestsMap.set(data.to, data.status);
+    });
 
     const nodes = await Promise.all([...allUIDs].map(async userId => {
       const userDoc = await getDoc(doc(db, 'users', userId));
       const userData = userDoc.exists() ? userDoc.data() : {};
+      
+      let requestStatus = 'none';
+      if (firstDegreeUIDs.has(userId)) {
+        requestStatus = 'connected';
+      } else if (hangoutRequestsMap.has(userId)) {
+        requestStatus = hangoutRequestsMap.get(userId);
+      } else if (approvalRequestsMap.has(userId)) {
+        const approvalStatus = approvalRequestsMap.get(userId);
+        requestStatus = approvalStatus === 'pending' ? 'pendingApproval' : approvalStatus;
+      }
+      
       return {
         id: userId,
         name: userData.name || 'Unknown',
         bio: userData.bio || '',
         requestSent: sentRequestUIDs.has(userId),
+        requestStatus: requestStatus,
+        degree: firstDegreeUIDs.has(userId) ? 1 : (secondDegreeUIDs.has(userId) ? 2 : 0)
       };
     }));
 
@@ -147,24 +208,79 @@ export async function buildConnectionGraph(uid) {
   }
 }
 
-export async function sendHangoutRequest(fromUid, toUid, idea) {
+/**
+ * Enhanced hangout request function with proper 1st/2nd degree logic
+ */
+export async function sendHangoutRequest(fromUid, toUid, hangoutData) {
   if (!fromUid || !toUid || fromUid === toUid) {
     throw new Error("Invalid UIDs provided");
   }
 
-  const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
-  await setDoc(ref, {
+  const connectionDegree = await getConnectionDegree(fromUid, toUid);
+  
+  if (connectionDegree === 0) {
+    throw new Error("No connection exists between users");
+  }
+
+  const hangoutRequestData = {
     from: fromUid,
     to: toUid,
-    idea: idea || '',
+    idea: hangoutData.idea || '',
+    eventType: hangoutData.eventType || '',
+    time: hangoutData.time || '',
+    place: hangoutData.place || '',
     status: 'pending',
-    createdAt: new Date(),
-  });
+    degree: connectionDegree,
+    createdAt: serverTimestamp(),
+  };
+
+  // For 1st degree connections, send request directly
+  if (connectionDegree === 1) {
+    const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
+    await setDoc(ref, hangoutRequestData);
+    return { success: true, message: 'Hangout request sent directly!' };
+  }
+
+  // For 2nd degree connections, need approval first
+  if (connectionDegree === 2) {
+    const mutualFriends = await getMutualFriends(fromUid, toUid);
+    
+    if (mutualFriends.length === 0) {
+      throw new Error("No mutual friends found for approval");
+    }
+
+    // Use the first mutual friend for approval (you can modify this logic)
+    const mutualFriend = mutualFriends[0];
+    
+    const approvalRef = doc(db, 'secondDegreeApprovals', `${fromUid}_${toUid}`);
+    await setDoc(approvalRef, {
+      from: fromUid,
+      to: toUid,
+      mutual: mutualFriend,
+      hangoutData: hangoutRequestData,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    });
+
+    return { 
+      success: true, 
+      message: 'Approval request sent to mutual friend!',
+      requiresApproval: true,
+      mutualFriend: mutualFriend
+    };
+  }
+
+  throw new Error("Invalid connection degree");
 }
 
 export async function acceptHangoutRequest(fromUid, toUid) {
   const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
-  await setDoc(ref, { status: 'accepted' }, { merge: true });
+  await updateDoc(ref, { status: 'accepted' });
+}
+
+export async function declineHangoutRequest(fromUid, toUid) {
+  const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
+  await updateDoc(ref, { status: 'declined' });
 }
 
 export async function cancelHangoutRequest(fromUid, toUid) {
@@ -172,14 +288,15 @@ export async function cancelHangoutRequest(fromUid, toUid) {
   await deleteDoc(ref);
 }
 
-export async function requestSecondDegreeApproval(fromUid, toUid, mutualUid) {
+export async function requestSecondDegreeApproval(fromUid, toUid, mutualUid, hangoutData) {
   const ref = doc(db, 'secondDegreeApprovals', `${fromUid}_${toUid}`);
   await setDoc(ref, {
     from: fromUid,
     to: toUid,
     mutual: mutualUid,
+    hangoutData: hangoutData,
     status: 'pending',
-    createdAt: new Date(),
+    createdAt: serverTimestamp(),
   });
 }
 
@@ -191,13 +308,74 @@ export async function approveSecondDegreeRequest(docId, status) {
     throw new Error("Approval request not found.");
   }
 
-  const { from, to } = approvalSnap.data();
+  const { from, to, hangoutData } = approvalSnap.data();
 
-  // Update status
-  await setDoc(approvalRef, { status }, { merge: true });
+  // Update approval status
+  await updateDoc(approvalRef, { status });
 
   if (status === 'approved') {
-    await sendHangoutRequest(from, to);
+    // Now send the actual hangout request
+    const hangoutRef = doc(db, 'hangoutRequests', `${from}_${to}`);
+    await setDoc(hangoutRef, {
+      ...hangoutData,
+      status: 'pending',
+      approvedAt: serverTimestamp(),
+    });
   }
 }
 
+/**
+ * Get pending hangout requests for a user
+ */
+export async function getPendingHangoutRequests(uid) {
+  const q = query(collection(db, 'hangoutRequests'), where('to', '==', uid), where('status', '==', 'pending'));
+  const snap = await getDocs(q);
+  
+  return Promise.all(snap.docs.map(async (doc) => {
+    const data = doc.data();
+    const fromUserDoc = await getDoc(doc(db, 'users', data.from));
+    const fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
+    
+    return {
+      id: doc.id,
+      ...data,
+      fromUser: {
+        id: data.from,
+        name: fromUserData.name || 'Unknown',
+        bio: fromUserData.bio || ''
+      }
+    };
+  }));
+}
+
+/**
+ * Get pending approval requests for a user (where they need to approve 2nd degree connections)
+ */
+export async function getPendingApprovalRequests(uid) {
+  const q = query(collection(db, 'secondDegreeApprovals'), where('mutual', '==', uid), where('status', '==', 'pending'));
+  const snap = await getDocs(q);
+  
+  return Promise.all(snap.docs.map(async (doc) => {
+    const data = doc.data();
+    const fromUserDoc = await getDoc(doc(db, 'users', data.from));
+    const toUserDoc = await getDoc(doc(db, 'users', data.to));
+    
+    const fromUserData = fromUserDoc.exists() ? fromUserDoc.data() : {};
+    const toUserData = toUserDoc.exists() ? toUserDoc.data() : {};
+    
+    return {
+      id: doc.id,
+      ...data,
+      fromUser: {
+        id: data.from,
+        name: fromUserData.name || 'Unknown',
+        bio: fromUserData.bio || ''
+      },
+      toUser: {
+        id: data.to,
+        name: toUserData.name || 'Unknown',
+        bio: toUserData.bio || ''
+      }
+    };
+  }));
+}
