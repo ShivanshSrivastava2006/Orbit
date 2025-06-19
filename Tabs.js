@@ -9,7 +9,7 @@ import MyNetwork from './screens/MyNetwork';
 import SendHangoutRequests from './screens/SendHangoutRequests';
 import AllHangoutUsers from './screens/AllHangoutUsers';
 import ApproveSecondDegreeScreen from './screens/ApproveSecondDegreeScreen';
-
+import GraphScreen from './screens/GraphScreen';
 const Tab = createBottomTabNavigator();
 
 export default function Tabs() {
@@ -31,6 +31,12 @@ export default function Tabs() {
         component={ApproveSecondDegreeScreen}
         options={{ title: 'Approve 2° Requests' }}
       />
+      <Tab.Screen
+        name="GraphScreen"
+        component={GraphScreen}
+       options={({title: 'gay'})}
+      />
+
     </Tab.Navigator>
   );
 }
