@@ -75,6 +75,7 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
    npx expo install expo-av
    npx expo install expo-linear-gradient
    npx expo install @expo-google-fonts/orbitron expo-font
+   npx expo install @expo-google-fonts/poppins expo-font
    ```
 
 5. Start the Expo app:
