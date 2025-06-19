@@ -10,10 +10,6 @@ import {
 } from 'firebase/firestore';
 import { db } from './config'; // Firestore instance
 
-
-// ✅ PATCHED FIRESTORE.JS (only buildConnectionGraph was changed)
-
-
 /**
  * Ensure user is in Firestore users collection (called after login)
  */
@@ -47,7 +43,6 @@ export async function sendconnectionRequest(fromUid, toUid) {
  * Accept a connection request
  */
 export async function acceptConnectionRequest(fromUid, toUid) {
-  // 1. Create connection document
   const connectionId = [fromUid, toUid].sort().join('_');
   const ref = doc(db, 'connections', connectionId);
   await setDoc(ref, {
@@ -55,7 +50,6 @@ export async function acceptConnectionRequest(fromUid, toUid) {
     createdAt: new Date(),
   });
 
-  // 2. Mark the request as accepted (or delete if you prefer)
   const requestRef = doc(db, 'connectionRequests', `${fromUid}_${toUid}`);
   await setDoc(requestRef, { status: 'accepted' }, { merge: true });
 }
@@ -66,14 +60,11 @@ export async function acceptConnectionRequest(fromUid, toUid) {
 export async function getFirstDegreeConnections(uid) {
   const q = query(collection(db, 'connections'), where('users', 'array-contains', uid));
   const snap = await getDocs(q);
-  console.log("🔍 Connections fetched for:", uid, snap.docs.map(d => d.data()));
-
   return snap.docs.map(doc => {
     const users = doc.data().users;
     return users.find(user => user !== uid);
   });
 }
-
 
 /**
  * Get 2nd-degree connections for a user
@@ -91,15 +82,8 @@ export async function getSecondDegreeConnections(uid) {
     }
   }
 
-  console.log("🔁 2nd-degree UIDs:", [...secondDegreeSet]);
-
   return Array.from(secondDegreeSet);
 }
-/**
- * Build full connection graph for a user
- * Includes 1st and 2nd-degree connections
- */
-// ... (other unchanged functions)
 
 export async function buildConnectionGraph(uid) {
   try {
@@ -178,24 +162,30 @@ export async function sendHangoutRequest(fromUid, toUid, idea) {
   });
 }
 
-/**
- * Accept a hangout request
- */
 export async function acceptHangoutRequest(fromUid, toUid) {
   const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
   await setDoc(ref, { status: 'accepted' }, { merge: true });
-
-  console.log("✅ Hangout request accepted between", fromUid, "and", toUid);
 }
 
-/**
- * Cancel or delete a hangout request
- */
 export async function cancelHangoutRequest(fromUid, toUid) {
   const ref = doc(db, 'hangoutRequests', `${fromUid}_${toUid}`);
   await deleteDoc(ref);
-
-  console.log("❌ Hangout request cancelled:", fromUid, "to", toUid);
 }
 
+export async function requestSecondDegreeApproval(fromUid, toUid, mutualUid) {
+  const ref = doc(db, 'secondDegreeApprovals', `${fromUid}_${toUid}`);
+  await setDoc(ref, {
+    from: fromUid,
+    to: toUid,
+    mutual: mutualUid,
+    status: 'pending',
+    createdAt: new Date(),
+  });
+}
 
+export async function approveSecondDegreeRequest(fromUid, toUid) {
+  const approvalRef = doc(db, 'secondDegreeApprovals', `${fromUid}_${toUid}`);
+  await setDoc(approvalRef, { status: 'approved' }, { merge: true });
+
+  await sendHangoutRequest(fromUid, toUid);
+}

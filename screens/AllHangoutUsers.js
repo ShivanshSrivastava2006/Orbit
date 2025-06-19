@@ -14,10 +14,12 @@ import {
 import {
   sendHangoutRequest,
   acceptHangoutRequest,
-  cancelHangoutRequest
+  cancelHangoutRequest,
+  getFirstDegreeConnections,
+  getSecondDegreeConnections,
+  requestSecondDegreeApproval
 } from '../firestore';
 import { auth } from '../firebase';
-import { getFirstDegreeConnections } from '../firestore';
 
 export default function AllHangoutUsers({ route }) {
   const currentUid = route?.params?.uid || auth.currentUser?.uid;
@@ -44,31 +46,38 @@ export default function AllHangoutUsers({ route }) {
 
   const fetchUsersAndRequests = async () => {
     try {
-      // ✅ Get only 1st-degree connections
       const firstDegreeUids = await getFirstDegreeConnections(currentUid);
+      const secondDegreeUids = await getSecondDegreeConnections(currentUid);
       const fetchedUsers = [];
 
       for (const uid of firstDegreeUids) {
         const userDoc = await getDoc(doc(db, 'users', uid));
         if (userDoc.exists()) {
-          fetchedUsers.push({ id: uid, ...userDoc.data() });
+          fetchedUsers.push({ id: uid, degree: 1, ...userDoc.data() });
+        }
+      }
+
+      for (const uid of secondDegreeUids) {
+        if (!firstDegreeUids.includes(uid)) {
+          const userDoc = await getDoc(doc(db, 'users', uid));
+          if (userDoc.exists()) {
+            fetchedUsers.push({ id: uid, degree: 2, ...userDoc.data() });
+          }
         }
       }
 
       setUsers(fetchedUsers);
 
-      // ✅ Fetch sent hangout requests with status
       const sentSnap = await getDocs(
         query(collection(db, 'hangoutRequests'), where('from', '==', currentUid))
       );
       const sent = {};
       sentSnap.docs.forEach(doc => {
         const data = doc.data();
-        sent[data.to] = data.status || 'pending';
+        sent[String(data.to)] = data.status || 'pending';
       });
       setSentRequests(sent);
 
-      // ✅ Fetch incoming requests
       const incomingSnap = await getDocs(
         query(collection(db, 'hangoutRequests'), where('to', '==', currentUid))
       );
@@ -90,8 +99,23 @@ export default function AllHangoutUsers({ route }) {
 
   const sendRequest = async (toUid) => {
     try {
-      await sendHangoutRequest(currentUid, toUid);
-      setSentRequests(prev => ({ ...prev, [toUid]: 'pending' }));
+      const firstDegreeUids = await getFirstDegreeConnections(currentUid);
+
+      if (firstDegreeUids.includes(toUid)) {
+        await sendHangoutRequest(currentUid, toUid);
+        setSentRequests(prev => ({ ...prev, [String(toUid)]: 'pending' }));
+      } else {
+        for (let mutual of firstDegreeUids) {
+          const theirConnections = await getFirstDegreeConnections(mutual);
+          if (theirConnections.includes(toUid)) {
+            await requestSecondDegreeApproval(currentUid, toUid, mutual);
+            //alert('Approval request sent to mutual friend for 2nd-degree connection.');
+            setSentRequests(prev => ({ ...prev, [String(toUid)]: 'pending' })); // 👈 Important fix
+            return;
+          }
+        }
+        alert('No mutual friend found to approve this 2nd-degree connection.');
+      }
     } catch (error) {
       console.error("❌ Error sending hangout request:", error);
     }
@@ -112,7 +136,7 @@ export default function AllHangoutUsers({ route }) {
 
       setSentRequests(prev => {
         const updated = { ...prev };
-        delete updated[toUid];
+        delete updated[String(toUid)];
         return updated;
       });
     } catch (error) {
@@ -139,11 +163,12 @@ export default function AllHangoutUsers({ route }) {
   };
 
   const renderUser = ({ item }) => {
-    const status = sentRequests[item.id];
+    const status = sentRequests[String(item.id)];
+    console.log("Rendering", item.name, "with status:", status);
 
     return (
       <View style={styles.card}>
-        <Text style={styles.name}>{item.name || 'No Name'}</Text>
+        <Text style={styles.name}>{item.name || 'No Name'} ({item.degree}°)</Text>
         <Text style={styles.bio}>{item.bio || 'No bio yet'}</Text>
 
         {status === 'accepted' ? (
@@ -182,13 +207,14 @@ export default function AllHangoutUsers({ route }) {
               scrollEnabled={false}
             />
           )}
-          <Text style={styles.heading}>Your 1st-Degree Connections</Text>
+          <Text style={styles.heading}>Your Connections</Text>
         </View>
       }
       data={users}
       keyExtractor={item => item.id}
       renderItem={renderUser}
       contentContainerStyle={{ padding: 16 }}
+      extraData={sentRequests} // 👈 This ensures re-render
     />
   );
 }

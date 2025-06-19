@@ -4,18 +4,20 @@ import { getFirstDegreeConnections, getSecondDegreeConnections, buildConnectionG
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config';
 import { auth } from '../firebase';
+import { useIsFocused } from '@react-navigation/native'; // ✅ ADDED
 
 export default function MyNetwork({ route }) {
   const currentUid = route?.params?.uid ?? auth.currentUser?.uid ?? null;
+  const isFocused = useIsFocused(); // ✅ ADDED
 
   console.log("🧠 Received UID in MyNetwork:", currentUid);
 
   const [firstDegree, setFirstDegree] = useState([]);
   const [secondDegree, setSecondDegree] = useState([]);
 
-  // 🔁 Fetch 1st and 2nd-degree connections
+  // 🔁 Fetch 1st and 2nd-degree connections on focus
   useEffect(() => {
-    if (!currentUid) return;
+    if (!currentUid || !isFocused) return;
 
     async function fetchConnections() {
       console.log("🧠 Fetching network for UID:", currentUid);
@@ -43,9 +45,9 @@ export default function MyNetwork({ route }) {
     }
 
     fetchConnections();
-  }, [currentUid]);
+  }, [currentUid, isFocused]); // ✅ Now listens for focus too
 
-  // 📊 Build and log connection graph
+  // 📊 Build and log connection graph (optional)
   useEffect(() => {
     async function testGraph() {
       if (!currentUid) return;
