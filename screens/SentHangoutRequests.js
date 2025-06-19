@@ -1,3 +1,4 @@
+// screens/SentHangoutRequests.js
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -25,7 +26,7 @@ import { db } from '../config';
 export default function SentRequests() {
   const currentUid = auth.currentUser?.uid;
   const [firstDegreeRequests, setFirstDegreeRequests] = useState([]);
-  const [secondDegreeRequests, setSecondDegreeRequests] = useState([]);
+  const [secondDegreeApprovalRequests, setSecondDegreeApprovalRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -44,7 +45,8 @@ export default function SentRequests() {
         setLoading(true);
       }
 
-      // Fetch 1st degree hangout requests (direct requests)
+      // Fetch 1st degree hangout requests (direct requests to 1st degree friends)
+      // AND 2nd degree requests that have been approved and sent directly
       const firstDegreeQuery = query(
         collection(db, 'hangoutRequests'),
         where('from', '==', currentUid)
@@ -60,7 +62,7 @@ export default function SentRequests() {
 
           return {
             id: docSnap.id,
-            type: 'firstDegree',
+            type: 'hangoutRequest',
             from: data.from,
             to: data.to,
             idea: data.idea,
@@ -68,7 +70,7 @@ export default function SentRequests() {
             time: data.time,
             place: data.place,
             status: data.status,
-            degree: data.degree,
+            degree: data.degree || 1, // Default to 1 if not specified
             createdAt: data.createdAt,
             expiresAt: data.expiresAt,
             toUser: {
@@ -85,14 +87,14 @@ export default function SentRequests() {
         return b.createdAt.seconds - a.createdAt.seconds;
       });
 
-      // Fetch 2nd degree approval requests (where you need approval from mutual friend)
+      // Fetch 2nd degree approval requests (requests for approval from mutual friends)
       const secondDegreeQuery = query(
         collection(db, 'secondDegreeApprovals'),
         where('from', '==', currentUid)
       );
       const secondDegreeSnap = await getDocs(secondDegreeQuery);
 
-      const secondDegreeReqs = await Promise.all(
+      const secondDegreeApprovalReqs = await Promise.all(
         secondDegreeSnap.docs.map(async (docSnap) => {
           const data = docSnap.data();
           
@@ -108,7 +110,7 @@ export default function SentRequests() {
 
           return {
             id: docSnap.id,
-            type: 'secondDegree',
+            type: 'approvalRequest',
             from: data.from,
             to: data.to,
             mutual: data.mutual,
@@ -128,13 +130,20 @@ export default function SentRequests() {
       );
 
       // Sort by createdAt in JavaScript (most recent first)
-      secondDegreeReqs.sort((a, b) => {
+      secondDegreeApprovalReqs.sort((a, b) => {
         if (!a.createdAt || !b.createdAt) return 0;
         return b.createdAt.seconds - a.createdAt.seconds;
       });
 
-      setFirstDegreeRequests(firstDegreeReqs);
-      setSecondDegreeRequests(secondDegreeReqs);
+      // Separate actual 1st degree requests from 2nd degree requests that were sent directly
+      const actualFirstDegreeRequests = firstDegreeReqs.filter(req => req.degree === 1);
+      const approvedSecondDegreeRequests = firstDegreeReqs.filter(req => req.degree === 2);
+
+      // Combine approved 2nd degree requests with 1st degree for display
+      const combinedFirstDegreeRequests = [...actualFirstDegreeRequests, ...approvedSecondDegreeRequests];
+
+      setFirstDegreeRequests(combinedFirstDegreeRequests);
+      setSecondDegreeApprovalRequests(secondDegreeApprovalReqs);
 
     } catch (error) {
       console.error("❌ Error fetching sent requests:", error);
@@ -162,7 +171,7 @@ export default function SentRequests() {
   };
 
   const getStatusText = (item) => {
-    if (item.type === 'firstDegree') {
+    if (item.type === 'hangoutRequest') {
       switch (item.status) {
         case 'pending': return '⏳ Pending Response';
         case 'accepted': return '✅ Accepted';
@@ -170,8 +179,8 @@ export default function SentRequests() {
         case 'expired': return '⏰ Expired';
         default: return '❓ Unknown';
       }
-    } else {
-      // Second degree
+    } else if (item.type === 'approvalRequest') {
+      // Second degree approval request
       switch (item.status) {
         case 'pending': return '⏳ Waiting for Approval';
         case 'approved': return '✅ Approved & Sent';
@@ -180,6 +189,7 @@ export default function SentRequests() {
         default: return '❓ Unknown';
       }
     }
+    return '❓ Unknown';
   };
 
   const isExpired = (expiresAt) => {
@@ -193,12 +203,20 @@ export default function SentRequests() {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   };
 
-  const renderFirstDegreeRequest = ({ item }) => {
+  const getDegreeText = (item) => {
+    if (item.type === 'hangoutRequest') {
+      return item.degree === 1 ? '1st Degree Friend' : '2nd Degree (Direct Request)';
+    }
+    return '2nd Degree (Approval Request)';
+  };
+
+  const renderHangoutRequest = ({ item }) => {
     const expired = isExpired(item.expiresAt);
     const displayStatus = expired ? 'expired' : item.status;
+    const isSecondDegreeDirectRequest = item.type === 'hangoutRequest' && item.degree === 2;
 
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, isSecondDegreeDirectRequest && styles.secondDegreeDirectCard]}>
         <View style={styles.cardHeader}>
           <Image
             source={{ uri: `https://i.pravatar.cc/150?u=${item.to}` }}
@@ -207,7 +225,7 @@ export default function SentRequests() {
           <View style={styles.userInfo}>
             <Text style={styles.name}>{item.toUser.name}</Text>
             <Text style={styles.bio}>{item.toUser.bio}</Text>
-            <Text style={styles.degreeText}>1st Degree Friend</Text>
+            <Text style={styles.degreeText}>{getDegreeText(item)}</Text>
           </View>
           <View style={styles.statusContainer}>
             <Text style={[styles.statusText, { color: getStatusColor(displayStatus) }]}>
@@ -243,9 +261,9 @@ export default function SentRequests() {
     );
   };
 
-  const renderSecondDegreeRequest = ({ item }) => {
+  const renderApprovalRequest = ({ item }) => {
     return (
-      <View style={[styles.card, styles.secondDegreeCard]}>
+      <View style={[styles.card, styles.approvalRequestCard]}>
         <View style={styles.cardHeader}>
           <Image
             source={{ uri: `https://i.pravatar.cc/150?u=${item.to}` }}
@@ -254,7 +272,7 @@ export default function SentRequests() {
           <View style={styles.userInfo}>
             <Text style={styles.name}>{item.toUser.name}</Text>
             <Text style={styles.bio}>{item.toUser.bio}</Text>
-            <Text style={styles.degreeText}>2nd Degree Connection</Text>
+            <Text style={styles.degreeText}>2nd Degree (Approval Request)</Text>
           </View>
           <View style={styles.statusContainer}>
             <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
@@ -301,7 +319,7 @@ export default function SentRequests() {
     );
   }
 
-  const hasRequests = firstDegreeRequests.length > 0 || secondDegreeRequests.length > 0;
+  const hasRequests = firstDegreeRequests.length > 0 || secondDegreeApprovalRequests.length > 0;
 
   if (!hasRequests) {
     return (
@@ -330,23 +348,29 @@ export default function SentRequests() {
       
       {firstDegreeRequests.length > 0 && (
         <>
-          <Text style={styles.subsectionTitle}>👥 1st Degree Friends</Text>
+          <Text style={styles.subsectionTitle}>👥 Direct Hangout Requests</Text>
+          <Text style={styles.subsectionSubtitle}>
+            Requests sent directly to 1st degree friends and approved 2nd degree connections
+          </Text>
           <FlatList
             data={firstDegreeRequests}
             keyExtractor={item => item.id}
-            renderItem={renderFirstDegreeRequest}
+            renderItem={renderHangoutRequest}
             scrollEnabled={false}
           />
         </>
       )}
 
-      {secondDegreeRequests.length > 0 && (
+      {secondDegreeApprovalRequests.length > 0 && (
         <>
-          <Text style={styles.subsectionTitle}>🤝 2nd Degree Connections</Text>
+          <Text style={styles.subsectionTitle}>🤝 Approval Requests</Text>
+          <Text style={styles.subsectionSubtitle}>
+            Requests for approval to connect with 2nd degree connections
+          </Text>
           <FlatList
-            data={secondDegreeRequests}
+            data={secondDegreeApprovalRequests}
             keyExtractor={item => item.id}
-            renderItem={renderSecondDegreeRequest}
+            renderItem={renderApprovalRequest}
             scrollEnabled={false}
           />
         </>
@@ -371,8 +395,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginHorizontal: 16,
-    marginVertical: 12,
+    marginTop: 20,
+    marginBottom: 4,
     color: '#555',
+  },
+  subsectionSubtitle: {
+    fontSize: 13,
+    color: '#888',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    fontStyle: 'italic',
   },
   card: {
     backgroundColor: '#fff',
@@ -386,9 +418,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  secondDegreeCard: {
+  secondDegreeDirectCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#2196F3',
+    borderLeftColor: '#4CAF50', // Green for approved 2nd degree
+  },
+  approvalRequestCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3', // Blue for approval requests
   },
   cardHeader: {
     flexDirection: 'row',

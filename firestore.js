@@ -120,7 +120,7 @@ export async function buildConnectionGraph(uid) {
     const requestsRef = collection(db, 'connectionRequests');
     const hangoutRequestsRef = collection(db, 'hangoutRequests');
     const approvalRequestsRef = collection(db, 'secondDegreeApprovals');
-
+          
     const firstDegreeUIDs = new Set();
     const firstSnap = await getDocs(query(connectionsRef, where('users', 'array-contains', uid)));
 

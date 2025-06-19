@@ -55,8 +55,9 @@ function Node({ node, offset, uid, onPress }) {
   
   if (node.id === uid) {
     color = '#FF5722'; // Orange for current user
-  } else if (node.degree === 1) {
-    color = '#4CAF50'; // Green for 1st degree
+  } else if (node.degree === 1 || node.isConnected) {
+    // Green for 1st degree OR previously connected 2nd degree
+    color = '#4CAF50'; 
   }
   
   if (x === undefined || y === undefined) return null;
@@ -143,7 +144,15 @@ export default function GraphScreen() {
         .on('tick', () => {
           const pos = {};
           simNodes.forEach(n => {
-            pos[n.id] = { x: n.x, y: n.y, name: n.name, bio: n.bio, requestStatus: n.requestStatus, degree: n.degree };
+            pos[n.id] = { 
+              x: n.x, 
+              y: n.y, 
+              name: n.name, 
+              bio: n.bio, 
+              requestStatus: n.requestStatus, 
+              degree: n.degree,
+              isConnected: n.isConnected // Track if previously connected
+            };
           });
           setPositions({ ...pos });
         })
@@ -175,9 +184,12 @@ export default function GraphScreen() {
         place: eventPlace,
       };
 
+      // Check if this is a 2nd degree connection that was previously connected
+      const isDirectConnection = selected.degree === 1 || selected.isConnected;
+
       const result = await sendHangoutRequest(uid, selected.id, hangoutData);
       
-      if (result.requiresApproval) {
+      if (result.requiresApproval && !isDirectConnection) {
         Alert.alert('✅ Approval Requested', 'Your hangout request has been sent to a mutual friend for approval!');
       } else {
         Alert.alert('✅ Request Sent', 'Your hangout request has been sent directly!');
@@ -233,7 +245,7 @@ export default function GraphScreen() {
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#4CAF50' }]} />
-          <Text style={styles.legendText}>1st Degree</Text>
+          <Text style={styles.legendText}>Direct Friends</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#2196F3' }]} />
@@ -285,6 +297,8 @@ export default function GraphScreen() {
               setSelected(null);
               clearForm();
             }}
+            activeOpacity={0.6}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text style={styles.closeText}>×</Text>
           </TouchableOpacity>
@@ -298,15 +312,24 @@ export default function GraphScreen() {
               <Text style={styles.profileName}>{selected.name}</Text>
               <Text style={styles.profileBio}>{selected.bio || 'No bio set'}</Text>
               <Text style={styles.degreeText}>
-                {selected.degree === 1 ? '1st Degree Friend' : '2nd Degree Connection'}
+                {selected.degree === 1 ? '1st Degree Friend' : 
+                 selected.isConnected ? '2nd Degree (Previously Connected)' : 
+                 '2nd Degree Connection'}
               </Text>
             </View>
           </View>
 
-          {/* Enhanced Hangout Form */}
-          {(selected.requestStatus === 'none' || selected.requestStatus === 'connected') && (
+          {/* Enhanced Hangout Form - Show for available connections */}
+          {/* FIXED: Show form for ALL non-pending statuses, including 'accepted' */}
+          {(selected.requestStatus === 'none' || 
+            selected.requestStatus === 'connected' || 
+            selected.requestStatus === 'expired' ||
+            selected.requestStatus === 'declined' ||
+            selected.requestStatus === 'accepted') && (
             <View style={styles.hangoutForm}>
-              <Text style={styles.formTitle}>Plan a Hangout</Text>
+              <Text style={styles.formTitle}>
+                {selected.requestStatus === 'accepted' ? 'Plan Another Hangout' : 'Plan a Hangout'}
+              </Text>
               
               <TextInput
                 placeholder="What's your hangout idea?"
@@ -317,25 +340,36 @@ export default function GraphScreen() {
               />
 
               <Text style={styles.labelText}>Event Type</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.eventTypeContainer}>
-                {eventTypes.map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.eventTypeButton,
-                      eventType === type && styles.eventTypeButtonSelected
-                    ]}
-                    onPress={() => setEventType(type)}
-                  >
-                    <Text style={[
-                      styles.eventTypeText,
-                      eventType === type && styles.eventTypeTextSelected
-                    ]}>
-                      {type}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+              <View style={styles.eventTypeContainer}>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.eventTypeContentContainer}
+                  nestedScrollEnabled={true}
+                >
+                  {eventTypes.map((type) => (
+                    <TouchableOpacity
+                      key={type}
+                      style={[
+                        styles.eventTypeButton,
+                        eventType === type && styles.eventTypeButtonSelected
+                      ]}
+                      onPress={() => {
+                        console.log('Selected event type:', type); // Debug log
+                        setEventType(type);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[
+                        styles.eventTypeText,
+                        eventType === type && styles.eventTypeTextSelected
+                      ]}>
+                        {type}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
 
               <TextInput
                 placeholder="When? (e.g., Tonight 7 PM, Tomorrow afternoon)"
@@ -360,16 +394,43 @@ export default function GraphScreen() {
                 onPress={handleSendHangout}
               >
                 <Text style={styles.requestText}>
-                  {selected.degree === 2 ? 'Request Approval & Send' : 'Send Hangout Invite'}
+                  {(selected.degree === 2 && !selected.isConnected) ? 
+                    'Request Approval & Send' : 
+                    selected.requestStatus === 'accepted' ? 
+                    'Send New Hangout Invite' :
+                    'Send Hangout Invite'}
                 </Text>
+              </TouchableOpacity>
+              
+              {/* Show success message for previously accepted requests */}
+              {selected.requestStatus === 'accepted' && (
+                <View style={styles.successBanner}>
+                  <Text style={styles.successText}>✅ Your last hangout request was accepted!</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Status-based messages for pending/waiting states only */}
+          {selected.requestStatus === 'pending' && (
+            <View style={styles.statusContainer}>
+              <Text style={styles.statusText}>Request Pending ⏳</Text>
+              <Text style={styles.statusSubtext}>Waiting for their response...</Text>
+              <TouchableOpacity
+                style={[styles.requestButton, { backgroundColor: '#e63946' }]}
+                onPress={handleCancelRequest}
+              >
+                <Text style={styles.requestText}>Cancel Request</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* Status-based buttons */}
-          {selected.requestStatus === 'pending' && (
+          {selected.requestStatus === 'pendingApproval' && (
             <View style={styles.statusContainer}>
-              <Text style={styles.statusText}>Request Pending ⏳</Text>
+              <Text style={styles.statusText}>Waiting for Mutual Friend Approval 🤝</Text>
+              <Text style={styles.statusSubtext}>
+                Your request needs approval from a mutual friend since this is a 2nd degree connection.
+              </Text>
               <TouchableOpacity
                 style={[styles.requestButton, { backgroundColor: '#e63946' }]}
                 onPress={handleCancelRequest}
@@ -381,22 +442,8 @@ export default function GraphScreen() {
 
           {selected.requestStatus === 'approved' && (
             <View style={styles.statusContainer}>
-              <Text style={styles.statusText}>Request Approved ✅</Text>
-            </View>
-          )}
-
-          {selected.requestStatus === 'pendingApproval' && (
-            <View style={styles.statusContainer}>
-              <Text style={styles.statusText}>Waiting for Mutual Friend Approval 🤝</Text>
-              <Text style={styles.statusSubtext}>
-                Your request needs approval from a mutual friend since this is a 2nd degree connection.
-              </Text>
-            </View>
-          )}
-
-          {selected.requestStatus === 'declined' && (
-            <View style={styles.statusContainer}>
-              <Text style={styles.statusText}>Request Declined ❌</Text>
+              <Text style={styles.statusText}>Request Approved & Sent ✅</Text>
+              <Text style={styles.statusSubtext}>Your hangout request has been forwarded to them!</Text>
             </View>
           )}
         </ScrollView>
@@ -456,13 +503,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 10,
-    zIndex: 10,
-    padding: 6,
+    zIndex: 1000,
+    padding: 8,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#999',
+    color: '#666',
+    lineHeight: 18,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -512,8 +566,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   eventTypeContainer: {
-    flexDirection: 'row',
     marginBottom: 10,
+    height: 50,
+  },
+  eventTypeContentContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 5,
   },
   eventTypeButton: {
     paddingVertical: 6,
@@ -559,5 +617,18 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
     paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  successBanner: {
+    backgroundColor: '#e8f5e8',
+    padding: 8,
+    borderRadius: 6,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  successText: {
+    color: '#2e7d32',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
