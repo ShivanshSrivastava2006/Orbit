@@ -183,9 +183,21 @@ export async function requestSecondDegreeApproval(fromUid, toUid, mutualUid) {
   });
 }
 
-export async function approveSecondDegreeRequest(fromUid, toUid) {
-  const approvalRef = doc(db, 'secondDegreeApprovals', `${fromUid}_${toUid}`);
-  await setDoc(approvalRef, { status: 'approved' }, { merge: true });
+export async function approveSecondDegreeRequest(docId, status) {
+  const approvalRef = doc(db, 'secondDegreeApprovals', docId);
+  const approvalSnap = await getDoc(approvalRef);
 
-  await sendHangoutRequest(fromUid, toUid);
+  if (!approvalSnap.exists()) {
+    throw new Error("Approval request not found.");
+  }
+
+  const { from, to } = approvalSnap.data();
+
+  // Update status
+  await setDoc(approvalRef, { status }, { merge: true });
+
+  if (status === 'approved') {
+    await sendHangoutRequest(from, to);
+  }
 }
+

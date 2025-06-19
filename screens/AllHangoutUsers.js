@@ -27,6 +27,7 @@ export default function AllHangoutUsers({ route }) {
   const [users, setUsers] = useState([]);
   const [sentRequests, setSentRequests] = useState({});
   const [incomingRequests, setIncomingRequests] = useState([]);
+  const [approvalStatus, setApprovalStatus] = useState({});
 
   useEffect(() => {
     if (isFocused && currentUid) {
@@ -78,6 +79,21 @@ export default function AllHangoutUsers({ route }) {
       });
       setSentRequests(sent);
 
+      const approvalSnap = await getDocs(
+        query(collection(db, 'secondDegreeApprovals'), where('from', '==', currentUid))
+      );
+      const approvalMap = {};
+      for (const docSnap of approvalSnap.docs) {
+        const { to, mutual, status } = docSnap.data();
+        const mutualName = await getUserName(mutual);
+        if (status === 'approved') {
+          approvalMap[to] = `Approved by ${mutualName}, request sent`;
+        } else if (status === 'pending') {
+          approvalMap[to] = `Waiting for approval from ${mutualName}`;
+        }
+      }
+      setApprovalStatus(approvalMap);
+
       const incomingSnap = await getDocs(
         query(collection(db, 'hangoutRequests'), where('to', '==', currentUid))
       );
@@ -109,8 +125,7 @@ export default function AllHangoutUsers({ route }) {
           const theirConnections = await getFirstDegreeConnections(mutual);
           if (theirConnections.includes(toUid)) {
             await requestSecondDegreeApproval(currentUid, toUid, mutual);
-            //alert('Approval request sent to mutual friend for 2nd-degree connection.');
-            setSentRequests(prev => ({ ...prev, [String(toUid)]: 'pending' })); // 👈 Important fix
+            setSentRequests(prev => ({ ...prev, [String(toUid)]: 'pending' }));
             return;
           }
         }
@@ -164,7 +179,7 @@ export default function AllHangoutUsers({ route }) {
 
   const renderUser = ({ item }) => {
     const status = sentRequests[String(item.id)];
-    console.log("Rendering", item.name, "with status:", status);
+    const approval = approvalStatus[String(item.id)];
 
     return (
       <View style={styles.card}>
@@ -175,6 +190,16 @@ export default function AllHangoutUsers({ route }) {
           <Button title="Hangout Accepted" disabled />
         ) : status === 'pending' ? (
           <Button title="Unsend Request" color="red" onPress={() => unsendRequest(item.id)} />
+        ) : item.degree === 2 && approval ? (
+          <Text
+            style={{
+              color: approval.includes('Waiting') ? 'orange' : 'green',
+              fontWeight: 'bold',
+              marginTop: 6,
+            }}
+          >
+            {approval}
+          </Text>
         ) : (
           <Button title="Send Hangout" onPress={() => sendRequest(item.id)} />
         )}
@@ -214,7 +239,7 @@ export default function AllHangoutUsers({ route }) {
       keyExtractor={item => item.id}
       renderItem={renderUser}
       contentContainerStyle={{ padding: 16 }}
-      extraData={sentRequests} // 👈 This ensures re-render
+      extraData={[sentRequests, approvalStatus]}
     />
   );
 }

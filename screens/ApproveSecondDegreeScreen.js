@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, FlatList, StyleSheet } from 'react-native';
-import { collection, getDocs, query, where, doc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { auth } from '../firebase';
 import { db } from '../config';
 import { approveSecondDegreeRequest } from '../firestore';
@@ -12,13 +12,29 @@ export default function ApproveSecondDegreeScreen() {
   useEffect(() => {
     const fetchApprovalRequests = async () => {
       if (!uid) return;
+
       const q = query(
         collection(db, 'secondDegreeApprovals'),
-        where('approver', '==', uid),
+        where('mutual', '==', uid),
         where('status', '==', 'pending')
       );
       const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const data = await Promise.all(
+        snap.docs.map(async (docSnap) => {
+          const request = docSnap.data();
+          const fromSnap = await getDoc(doc(db, 'users', request.from));
+          const toSnap = await getDoc(doc(db, 'users', request.to));
+          return {
+            id: docSnap.id,
+            from: request.from,
+            to: request.to,
+            fromName: fromSnap.exists() ? fromSnap.data().name : request.from,
+            toName: toSnap.exists() ? toSnap.data().name : request.to,
+          };
+        })
+      );
+
       setRequests(data);
     };
 
@@ -32,8 +48,8 @@ export default function ApproveSecondDegreeScreen() {
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <Text style={styles.name}>Approve hangout from: {item.from}</Text>
-      <Text style={styles.bio}>To: {item.to}</Text>
+      <Text style={styles.name}>Approve hangout from: {item.fromName}</Text>
+      <Text style={styles.bio}>To: {item.toName}</Text>
       <View style={styles.buttons}>
         <Button title="Approve" onPress={() => handleApproval(item.id, 'approved')} />
         <Button title="Reject" color="red" onPress={() => handleApproval(item.id, 'rejected')} />
