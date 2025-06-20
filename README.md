@@ -62,12 +62,14 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
 
    ```bash
    npm install
+   npm install firebase  # Required for authentication and Firestore
    ```
 
    Or with yarn (recommended if npm gives trouble):
 
    ```bash
    yarn install
+   yarn add firebase
    ```
 3. Install required Expo packages:
 
