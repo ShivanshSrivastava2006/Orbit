@@ -1,13 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Video } from 'expo-av';
-import { useFonts, Orbitron_700Bold } from '@expo-google-fonts/orbitron';
+import * as Animatable from 'react-native-animatable';
+import { useFonts, Poppins_700Bold } from '@expo-google-fonts/poppins';
 
 export default function Onboarding({ navigation }) {
   const [fontsLoaded] = useFonts({
-    Orbitron_700Bold,
+    Poppins_700Bold,
   });
+
+  const taglines = [
+  { text: 'CONNECT.', animation: 'fadeIn' },
+  { text: 'COLLIDE..', animation: 'fadeIn' },
+  { text: 'CHILL...', animation: 'fadeIn' },
+];
+
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % taglines.length);
+    }, 1000); // 1.4s per phrase
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (!fontsLoaded) return null;
 
@@ -27,7 +45,7 @@ export default function Onboarding({ navigation }) {
             source={require('../assets/Onboarding GIF.mp4')}
             rate={1.0}
             volume={1.0}
-            isMuted={false}
+            isMuted={true}
             resizeMode="cover"
             shouldPlay
             isLooping
@@ -36,20 +54,18 @@ export default function Onboarding({ navigation }) {
         </View>
 
         <View style={styles.taglineWrapper}>
-          <Video
-            source={require('../assets/ConnectCollideChill.mp4')}
-            rate={1.0}
-            volume={1.0}
-            isMuted={false}
-            resizeMode="contain"
-            shouldPlay
-            isLooping
-            style={styles.taglineVideo}
-          />
+          <Animatable.Text
+          key={currentIndex} // Forces animation replay
+          animation={taglines[currentIndex].animation}
+          duration={700}
+          style={styles.taglineText}
+        >
+          {taglines[currentIndex].text}
+        </Animatable.Text>
         </View>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('SignupScreen')}>
         <Text style={styles.buttonText}>GET STARTED</Text>
       </TouchableOpacity>
     </LinearGradient>
@@ -76,39 +92,34 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 30,
-    fontFamily: 'Orbitron_700Bold',
+    fontFamily: 'Poppins_700Bold',
     color: '#333',
     marginBottom: 24,
   },
-videoWrapper: {
-  width: 260,
-  height: 170,
-  borderRadius: 16,
-  overflow: 'hidden',
-  marginBottom: 16,
-},
-
-video: {
-  width: '100%',
-  height: '100%',
-},
-
-
+  videoWrapper: {
+    width: 260,
+    height: 170,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  video: {
+    width: '100%',
+    height: '100%',
+  },
   taglineWrapper: {
-  width: 300,
-  height: 94,
-  marginBottom: 20,
-  borderRadius: 20,
-  overflow: 'hidden',
-  alignItems: 'flex-start', // necessary for shift
-},
-
-taglineVideo: {
-  width: '120%',         // zoom in horizontally
-  height: '100%',
-  marginLeft: '-10%',    // crop from the left side
-},
- 
+    height: 60,
+    width: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderRadius: 20,
+  },
+  taglineText: {
+    fontSize: 24,
+    color: '#000',
+    fontFamily: 'Poppins_700Bold',
+  },
   button: {
     backgroundColor: '#84a0df',
     paddingVertical: 14,
