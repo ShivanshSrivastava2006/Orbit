@@ -1,29 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Video } from 'expo-av';
 import * as Animatable from 'react-native-animatable';
 import { useFonts, Poppins_700Bold } from '@expo-google-fonts/poppins';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const baseWidth = 375;
+const scale = (size) => (screenWidth / baseWidth) * size;
+
 export default function Onboarding({ navigation }) {
-  const [fontsLoaded] = useFonts({
-    Poppins_700Bold,
-  });
+  const [fontsLoaded] = useFonts({ Poppins_700Bold });
 
   const taglines = [
-  { text: 'CONNECT.', animation: 'fadeIn' },
-  { text: 'COLLIDE..', animation: 'fadeIn' },
-  { text: 'CHILL...', animation: 'fadeIn' },
-];
-
+    { text: 'CONNECT.', animation: 'fadeIn' },
+    { text: 'COLLIDE..', animation: 'fadeIn' },
+    { text: 'CHILL...', animation: 'fadeIn' },
+  ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % taglines.length);
-    }, 1000); // 1.4s per phrase
-
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -55,18 +55,31 @@ export default function Onboarding({ navigation }) {
 
         <View style={styles.taglineWrapper}>
           <Animatable.Text
-          key={currentIndex} // Forces animation replay
-          animation={taglines[currentIndex].animation}
-          duration={700}
-          style={styles.taglineText}
-        >
-          {taglines[currentIndex].text}
-        </Animatable.Text>
+            key={currentIndex}
+            animation={taglines[currentIndex].animation}
+            duration={700}
+            style={styles.taglineText}
+          >
+            {taglines[currentIndex].text}
+          </Animatable.Text>
         </View>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('SignupScreen')}>
-        <Text style={styles.buttonText}>GET STARTED</Text>
+      {/* Glassmorphic Gradient Button */}
+      <TouchableOpacity
+        style={styles.buttonWrapper}
+        onPress={() => navigation.navigate('SignupScreen')}
+        activeOpacity={0.85}
+      >
+        <LinearGradient
+          colors={['#4facfe', '#00f2fe']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.buttonGradient}
+        >
+          <Text style={[styles.buttonText, styles.textStroke]}>GET STARTED</Text>
+          <Text style={styles.buttonText}>GET STARTED</Text>
+        </LinearGradient>
       </TouchableOpacity>
     </LinearGradient>
   );
@@ -75,72 +88,97 @@ export default function Onboarding({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 80,
+    paddingHorizontal: scale(20),
+    paddingTop: scale(60),
+    paddingBottom: scale(80),
     justifyContent: 'space-between',
   },
   content: {
     alignItems: 'center',
-    gap: 24,
+    gap: scale(24),
   },
   logo: {
-    width: 90,
-    height: 90,
+    width: scale(90),
+    height: scale(90),
     resizeMode: 'contain',
-    marginBottom: 10,
+    marginBottom: scale(30),
   },
   appName: {
-    fontSize: 30,
+    fontSize: scale(30),
     fontFamily: 'Poppins_700Bold',
     color: '#333',
-    marginBottom: 24,
+    marginBottom: scale(40),
   },
   videoWrapper: {
-    width: 260,
-    height: 170,
-    borderRadius: 16,
+    width: scale(260),
+    height: scale(170),
+    borderRadius: scale(16),
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: scale(50),
   },
   video: {
     width: '100%',
     height: '100%',
   },
   taglineWrapper: {
-    height: 60,
-    width: 300,
+    height: scale(60),
+    width: scale(300),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
-    borderRadius: 20,
+    marginBottom: scale(20),
+    borderRadius: scale(20),
   },
   taglineText: {
-    fontSize: 24,
+    fontSize: scale(30),
     color: '#000',
     fontFamily: 'Poppins_700Bold',
   },
-  button: {
-    backgroundColor: '#84a0df',
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 30,
-    alignItems: 'center',
+
+  // GLASS BUTTON STYLES
+  buttonWrapper: {
+    borderRadius: scale(30),
+    overflow: 'hidden',
     alignSelf: 'center',
-    marginBottom: 16,
-    shadowColor: '#999',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 6,
+    marginBottom: scale(16),
+
+    // Shadow for iOS
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: scale(6) },
+    shadowRadius: scale(10),
+
+    // Shadow for Android
+    elevation: 8,
+
+    // Border for glass look
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(255,255,255,0.05)', // optional transparent overlay
+  },
+  buttonGradient: {
+    paddingVertical: scale(14),
+    paddingHorizontal: scale(30),
+    borderRadius: scale(30),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 1,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 1,
-  },
+  color: '#fff',
+  fontWeight: 'bold',
+  fontSize: scale(16),
+  letterSpacing: 1,
+  textAlign: 'center',
+  textShadowColor: '#000',
+  textShadowOffset: { width: 0, height: 0 },
+  textShadowRadius: 2, // Thicker = more like a border
+},
+textStroke: {
+  position: 'absolute',
+  color: 'black',
+  zIndex: -1,
+  textShadowColor: 'black',
+  textShadowOffset: { width: 1, height: 1 },
+  textShadowRadius: 1,
+},
+
 });
