@@ -80,6 +80,7 @@ The goal: remove friction, make small spontaneous plans easier, and preserve com
    npx expo install @expo-google-fonts/poppins expo-font
    npx expo install @expo-google-fonts/poppins expo-font react-native-animatable
    npx expo install expo-blur
+   npx expo install expo-image-picker
 
    ```
 
